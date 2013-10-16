@@ -1,0 +1,67 @@
+﻿<!--
+    Copyright (c) 2012 Nokia Corporation.
+-->
+<UserControl x:Class="Compass.Ui.CompassControl"
+    x:Name="CompassControlRoot"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:local="clr-namespace:Compass.Ui"
+    Margin="0"
+    Padding="0"
+    FontFamily="{StaticResource PhoneFontFamilyNormal}"
+    FontSize="{StaticResource PhoneFontSizeNormal}">
+
+    <Grid x:Name="LayoutRoot"
+          Background="Transparent"
+          Margin="0"
+          RenderTransformOrigin="0.5, 0.5">
+        <UIElement.RenderTransform>
+            <RotateTransform
+                x:Name="PlateRotation"
+                CenterX="0.5"
+                CenterY="0.5"
+                Angle="0" />
+        </UIElement.RenderTransform>
+        <Image x:Name="Plate"
+               Source="/Assets/Graphics/compass-plate.png"
+               Width="290"
+               Height="600"
+               Stretch="Uniform" />
+        <Image x:Name="ScaleShadow"
+               Source="/Assets/Graphics/scale-shadow.png"
+               Width="276"
+               Height="276"
+               Margin="0, 190, 0, 0"
+               Stretch="Uniform" />
+        <Image x:Name="Scale"
+               Source="/Assets/Graphics/scale.png"
+               Width="276"
+               Margin="0, 190, 0, 0"
+               Stretch="Uniform"
+               RenderTransformOrigin="0.5, 0.5">
+            <UIElement.RenderTransform>
+                <RotateTransform
+                x:Name="ScaleRotation"
+                CenterX="0.5"
+                CenterY="0.5"
+                Angle="0" />
+            </UIElement.RenderTransform>
+        </Image>
+        <Image x:Name="Needle"
+               Source="/Assets/Graphics/compass-needle.png"
+               Width="21"
+               Margin="0, 190, 0, 0"
+               Stretch="Uniform"
+               RenderTransformOrigin="0.5, 0.5">
+            <UIElement.RenderTransform>
+                <RotateTransform
+                x:Name="NeedleRotation"
+                CenterX="0.5"
+                CenterY="0.5"
+                Angle="0" />
+            </UIElement.RenderTransform>
+        </Image>
+    </Grid>
+</UserControl>
