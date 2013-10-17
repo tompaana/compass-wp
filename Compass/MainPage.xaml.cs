@@ -105,7 +105,7 @@ namespace Compass
             // Create a new button and set the text value to the localized
             // string from AppResources.
             ApplicationBarIconButton appBarCenterToLocationButton =
-                new ApplicationBarIconButton(new Uri("/Assets/Graphics/center-white.png", UriKind.Relative));
+                new ApplicationBarIconButton(new Uri("/Assets/Graphics/center-icon.png", UriKind.Relative));
             appBarCenterToLocationButton.Text = AppResources.CenterToLocationButtonText;
             appBarCenterToLocationButton.Click += new EventHandler(CenterToLocation_Click);
             ApplicationBar.Buttons.Add(appBarCenterToLocationButton);

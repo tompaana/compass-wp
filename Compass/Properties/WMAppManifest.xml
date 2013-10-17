@@ -4,8 +4,8 @@
   <Languages xmlns="">
     <Language code="en-GB" />
   </Languages>
-  <App xmlns="" ProductID="{3e0f9d71-2c5f-4bc3-b09f-f78f0a981c98}" Title="Compass" RuntimeType="Silverlight" Version="0.1.0.0" Genre="apps.normal" Author="Tomi Paananen" Description="Sample description" Publisher="Nokia" PublisherID="{bbb21818-56ae-41e2-9b7c-b7a39305db8d}">
-    <IconPath IsRelative="true" IsResource="false">Assets\CompassIcon.png</IconPath>
+  <App xmlns="" ProductID="{3e0f9d71-2c5f-4bc3-b09f-f78f0a981c98}" Title="Compass" RuntimeType="Silverlight" Version="0.2.0.0" Genre="apps.normal" Author="Tomi Paananen" Description="An orienteering application for Windows Phone. This Nokia demo app combines Nokia Maps with compass sensor. A custom user control, which has an appearance of an orienteering compass, can be manipulated with gestures; it can be dragged and rotated." Publisher="Nokia" PublisherID="{bbb21818-56ae-41e2-9b7c-b7a39305db8d}">
+    <IconPath IsRelative="true" IsResource="false">Assets\Tiles\CompassIcon100NoBg.png</IconPath>
     <Capabilities>
       <Capability Name="ID_CAP_NETWORKING" />
       <Capability Name="ID_CAP_SENSORS" />
@@ -18,9 +18,9 @@
     <Tokens>
       <PrimaryToken TokenID="CompassToken" TaskName="_default">
         <TemplateFlip>
-          <SmallImageURI IsRelative="true" IsResource="false">Assets\Tiles\FlipCycleTileSmall.png</SmallImageURI>
+          <SmallImageURI IsRelative="true" IsResource="false">Assets\Tiles\CompassIcon159.png</SmallImageURI>
           <Count>0</Count>
-          <BackgroundImageURI IsRelative="true" IsResource="false">Assets\Tiles\FlipCycleTileMedium.png</BackgroundImageURI>
+          <BackgroundImageURI IsRelative="true" IsResource="false">Assets\Tiles\CompassIcon336.png</BackgroundImageURI>
           <Title>Compass</Title>
           <BackContent>
           </BackContent>
@@ -28,16 +28,14 @@
           </BackBackgroundImageURI>
           <BackTitle>
           </BackTitle>
-          <LargeBackgroundImageURI>
-          </LargeBackgroundImageURI>
+          <LargeBackgroundImageURI>Assets\Tiles\CompassIcon691.png</LargeBackgroundImageURI>
           <LargeBackContent>
           </LargeBackContent>
           <LargeBackBackgroundImageURI>
           </LargeBackBackgroundImageURI>
           <DeviceLockImageURI>
           </DeviceLockImageURI>
-          <HasLarge>
-          </HasLarge>
+          <HasLarge>True</HasLarge>
         </TemplateFlip>
       </PrimaryToken>
     </Tokens>

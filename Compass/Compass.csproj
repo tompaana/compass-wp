@@ -129,12 +129,8 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Assets\AlignmentGrid.png" />
-    <Content Include="Assets\ApplicationIcon.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Assets\CompassIcon.png" />
     <Content Include="Assets\Graphics\calibration-hint.png" />
-    <Content Include="Assets\Graphics\center-white.png" />
+    <Content Include="Assets\Graphics\center-icon.png" />
     <Content Include="Assets\Graphics\compass-needle.png" />
     <Content Include="Assets\Graphics\compass-plate.png" />
     <Content Include="Assets\Graphics\here-icon.png" />
@@ -142,15 +138,10 @@
     <Content Include="Assets\Graphics\scale-100.png" />
     <Content Include="Assets\Graphics\scale-shadow.png" />
     <Content Include="Assets\Graphics\scale.png" />
-    <Content Include="Assets\Tiles\FlipCycleTileLarge.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Assets\Tiles\FlipCycleTileMedium.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Assets\Tiles\FlipCycleTileSmall.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <Content Include="Assets\Tiles\CompassIcon100NoBg.png" />
+    <Content Include="Assets\Tiles\CompassIcon159.png" />
+    <Content Include="Assets\Tiles\CompassIcon336.png" />
+    <Content Include="Assets\Tiles\CompassIcon691.png" />
     <Content Include="Assets\Tiles\IconicTileMediumLarge.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
