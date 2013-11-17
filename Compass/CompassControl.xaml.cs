@@ -1,5 +1,5 @@
 ﻿/**
- * Copyright (c) 2012 Nokia Corporation.
+ * Copyright (c) 2012-2013 Nokia Corporation.
  */
 
 using System;
@@ -75,6 +75,14 @@ namespace Compass.Ui
         {
             get;
             private set;
+        }
+
+        public double PlateWidth
+        {
+            get
+            {
+                return Plate.ActualWidth;
+            }
         }
 
         /// <summary>

@@ -144,7 +144,7 @@
     <value>Cancel</value>
   </data>
   <data name="LocationUsageQueryText" xml:space="preserve">
-    <value>Allow application to access and use your location?</value>
+    <value>Allow this application to access and use your location? This setting can be changed from the application settings later.</value>
   </data>
   <data name="ToggleMapModeButtonText" xml:space="preserve">
     <value>Toggle map mode</value>
@@ -157,5 +157,8 @@
   </data>
   <data name="ToggleFullscreenButtonText" xml:space="preserve">
     <value>Toggle fullscreen</value>
+  </data>
+  <data name="LocationUsageQueryTitle" xml:space="preserve">
+    <value>Use of location</value>
   </data>
 </root>

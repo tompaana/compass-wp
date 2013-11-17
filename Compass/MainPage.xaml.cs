@@ -42,6 +42,7 @@ namespace Compass
 
         // Members
         private Microsoft.Devices.Sensors.Compass _compass = null;
+        private AppUtils _appUtils = null;
         private GeoCoordinate _coordinate = null;
         private MapLayer _mapLayer = null;
         private Image _hereMarkerImage = null;
@@ -55,7 +56,6 @@ namespace Compass
         private double _zoomLevel = DefaultMapZoomLevel;
         private bool _compassBeingMoved = false;
         private bool _inFullscreenMode = false;
-        private bool _isLocationAllowed = false;
 
         // Constructor
         public MainPage()
@@ -97,6 +97,62 @@ namespace Compass
             {
                 // TODO: Show an error message
             }
+
+            _appUtils = AppUtils.GetInstance();
+            _appUtils.LoadSettings();
+
+            this.Loaded += MainPage_Loaded;
+
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        void MainPage_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (!_appUtils.LocationAllowed)
+            {
+                LocationUsageQueryDialog.LocationUsageAllowed += OnLocationUsageAllowed;
+                LocationUsageQueryDialog.Show();
+            }
+            else
+            {
+                // The use of location was already allowed. Do locate the user
+                // now.
+                _timer = new Timer(GetCurrentLocation, null,
+                    TimeSpan.FromSeconds(0),
+                    TimeSpan.FromSeconds(LocationUpdateInterval));
+            }
+
+            BuildLocalizedApplicationBar();
+        }
+
+        /// <summary>
+        /// Called when the use of location is allowed. Stores the setting and
+        /// will start retrieving the user's location.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void OnLocationUsageAllowed(object sender, EventArgs e)
+        {
+            LocationUsageQueryDialog.LocationUsageAllowed -= OnLocationUsageAllowed;
+            _appUtils.LocationAllowed = true;
+
+            _timer = new Timer(GetCurrentLocation, null,
+                TimeSpan.FromSeconds(0),
+                TimeSpan.FromSeconds(LocationUpdateInterval));
+        }
+
+        /// <summary>
+        /// Saves the app settings.
+        /// </summary>
+        /// <param name="e"></param>
+        protected override void OnNavigatedFrom(NavigationEventArgs e)
+        {
+            _appUtils.SaveSettings();
+            base.OnNavigatedFrom(e);
         }
 
         /// <summary>
@@ -132,24 +188,6 @@ namespace Compass
             ApplicationBar.MenuItems.Add(appBarMenuItem);
             appBarMenuItem = new ApplicationBarMenuItem(AppResources.About);
             ApplicationBar.MenuItems.Add(appBarMenuItem);
-        }
-
-        /// <summary>
-        /// Event handler for location usage permission at startup.
-        /// </summary>
-        private void LocationUsage_Click(object sender, EventArgs e)
-        {
-            LocationPanel.Visibility = Visibility.Collapsed;
-            BuildLocalizedApplicationBar();
-
-            if (sender == AllowButton)
-            {
-                _isLocationAllowed = true;
-
-                _timer = new Timer(GetCurrentLocation, null,
-                    TimeSpan.FromSeconds(0),
-                    TimeSpan.FromSeconds(LocationUpdateInterval));
-            }
         }
 
         /// <summary>
@@ -407,7 +445,7 @@ namespace Compass
         {
             if (_coordinate == null)
             {
-                if (_isLocationAllowed)
+                if (_appUtils.LocationAllowed)
                 {
                     GetCurrentLocation(null);
                 }
@@ -425,19 +463,23 @@ namespace Compass
         /// <param name="e"></param>
         private void ToggleMapMode_Click(object sender, EventArgs e)
         {
-            switch (MyMap.CartographicMode)
+            switch (_appUtils.MapMode)
             {
                 case MapCartographicMode.Road:
-                    MyMap.CartographicMode = MapCartographicMode.Aerial;
+                    _appUtils.MapMode = MapCartographicMode.Aerial;
+                    MyMap.CartographicMode = _appUtils.MapMode;
                     break;
                 case MapCartographicMode.Aerial:
-                    MyMap.CartographicMode = MapCartographicMode.Hybrid;
+                    _appUtils.MapMode = MapCartographicMode.Hybrid;
+                    MyMap.CartographicMode = _appUtils.MapMode;
                     break;
                 case MapCartographicMode.Hybrid:
-                    MyMap.CartographicMode = MapCartographicMode.Terrain;
+                    _appUtils.MapMode = MapCartographicMode.Terrain;
+                    MyMap.CartographicMode = _appUtils.MapMode;
                     break;
                 default:
-                    MyMap.CartographicMode = MapCartographicMode.Road;
+                    _appUtils.MapMode = MapCartographicMode.Road;
+                    MyMap.CartographicMode = _appUtils.MapMode;
                     break;
             }
         }

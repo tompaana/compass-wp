@@ -133,11 +133,20 @@ namespace Compass.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Allow application to access and use your location?.
+        ///   Looks up a localized string similar to Allow this application to access and use your location? This setting can be changed from the application settings later..
         /// </summary>
         public static string LocationUsageQueryText {
             get {
                 return ResourceManager.GetString("LocationUsageQueryText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Use of location.
+        /// </summary>
+        public static string LocationUsageQueryTitle {
+            get {
+                return ResourceManager.GetString("LocationUsageQueryTitle", resourceCulture);
             }
         }
         

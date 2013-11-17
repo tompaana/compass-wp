@@ -1,5 +1,5 @@
 ﻿<!--
-    Copyright (c) 2012 Nokia Corporation.
+    Copyright (c) 2012-2013 Nokia Corporation.
 -->
 <UserControl x:Class="Compass.Ui.CompassControl"
     x:Name="CompassControlRoot"
