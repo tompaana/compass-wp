@@ -95,7 +95,6 @@
     </Compile>
     <Compile Include="AppUtils.cs" />
     <Compile Include="LocalizedStrings.cs" />
-    <Compile Include="LocationUsageQueryDialog.cs" />
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>
@@ -107,6 +106,9 @@
     </Compile>
     <Compile Include="CompassControl.xaml.cs">
       <DependentUpon>CompassControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="LocationUsageQueryDialog.xaml.cs">
+        <DependentUpon>LocationUsageQueryDialog.xaml</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>
