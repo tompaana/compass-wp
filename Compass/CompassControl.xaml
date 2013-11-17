@@ -25,12 +25,12 @@
                 Angle="0" />
         </UIElement.RenderTransform>
         <Image x:Name="Plate"
-               Source="/Assets/Graphics/compass-plate.png"
+               Source="/Assets/Graphics/compass_plate.png"
                Width="290"
                Height="600"
                Stretch="Uniform" />
         <Image x:Name="ScaleShadow"
-               Source="/Assets/Graphics/scale-shadow.png"
+               Source="/Assets/Graphics/scale_shadow.png"
                Width="276"
                Height="276"
                Margin="0, 190, 0, 0"
@@ -50,7 +50,7 @@
             </UIElement.RenderTransform>
         </Image>
         <Image x:Name="Needle"
-               Source="/Assets/Graphics/compass-needle.png"
+               Source="/Assets/Graphics/compass_needle.png"
                Width="21"
                Margin="0, 190, 0, 0"
                Stretch="Uniform"

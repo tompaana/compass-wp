@@ -149,4 +149,13 @@
   <data name="ToggleMapModeButtonText" xml:space="preserve">
     <value>Toggle map mode</value>
   </data>
+  <data name="About" xml:space="preserve">
+    <value>About</value>
+  </data>
+  <data name="Instructions" xml:space="preserve">
+    <value>Instructions</value>
+  </data>
+  <data name="ToggleFullscreenButtonText" xml:space="preserve">
+    <value>Toggle fullscreen</value>
+  </data>
 </root>

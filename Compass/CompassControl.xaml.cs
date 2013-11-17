@@ -23,13 +23,13 @@ namespace Compass.Ui
     {
         // Constants
         private const double RadiansToDegreesCoefficient = 57.2957795; // 180 / PI
-        private const int PlateNativeWidth = 290;
-        private const int PlateNativeHeight = 600;
-        private const int ScaleNativeWidth = 276;
-        private const int ScaleNativeHeight = 276;
-        private const int NeedleNativeWidth = 21;
-        private const float ScaleRelativeTopMargin = 0.32f;
-        private const float PlateManipulationRelativeTopMargin = 0.15f;
+        private const double ScaleRelativeTopMargin = 0.32f;
+        private const double PlateManipulationRelativeTopMargin = 0.15f;
+        private const int PlateNativeWidth = 870;
+        private const int PlateNativeHeight = 1800;
+        private const int ScaleNativeWidth = 828;
+        private const int ScaleNativeHeight = 828;
+        private const int NeedleNativeWidth = 63;
 
         // Data types
 
@@ -43,19 +43,18 @@ namespace Compass.Ui
         };
 
         // Members
-        private double _compassReading = 0;
-        private CompassControlArea _manipulatedArea = CompassControlArea.None;
+        private double _plateCenterX = 0;
+        private double _plateCenterY = 0;
         private double _previousX = 0;
         private double _previousY = 0;
         private int _plateManipulationBottom = 0;
         private int _scaleManipulationTop = 0;
         private int _scaleManipulationBottom = 0;
         private Boolean _isHd = false;
-        private double _plateCenterX = 0;
-        private double _plateCenterY = 0;
 
-        // Getters and setters
+        // Properties
 
+        private double _compassReading = 0;
         public double CompassReading
         {
             get
@@ -65,33 +64,61 @@ namespace Compass.Ui
             set
             {
                 _compassReading = value;
-                //Debug.WriteLine("CompassControl::CompassReading.set(): " + _compassReading);
                 UpdateNeedleAngle();
             }
         }
 
+        /// <summary>
+        /// The area of the compass control being manipulated.
+        /// </summary>
         public CompassControlArea ManipulatedArea
         {
-            get
-            {
-                return _manipulatedArea;
-            }
+            get;
+            private set;
         }
 
-        public double PlateWidth
-        {
-            get
-            {
-                return Plate.ActualWidth;
-            }
-        }
-
+        /// <summary>
+        /// The height of the compass control (plate).
+        /// </summary>
         public double PlateHeight
         {
             get
             {
                 return Plate.ActualHeight;
             }
+            set
+            {
+                if (value > 0 && value != Plate.ActualHeight)
+                {
+                    double relativeSize = value / PlateNativeHeight;
+                    SetRelativeSize(relativeSize);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Compass control (plate) angle.
+        /// </summary>
+        public double PlateAngle
+        {
+            get
+            {
+                return PlateRotation.Angle;
+            }
+            set
+            {
+                PlateRotation.Angle = value;
+                UpdateNeedleAngle();
+            }
+        }
+
+        /// <summary>
+        /// Enabling/disabling touch manipulation.
+        /// </summary>
+        public Boolean ManipulationEnabled
+        {
+            get;
+            set;
         }
 
         /// <summary>
@@ -100,15 +127,20 @@ namespace Compass.Ui
         public CompassControl()
         {
             InitializeComponent();
+            ManipulatedArea = CompassControlArea.None;
+            ManipulationEnabled = true;
 
             if (Application.Current.Host.Content.ActualWidth >= 720)
             {
                 _isHd = true;
+                PlateHeight = 600;
+            }
+            else
+            {
+                PlateHeight = 400;
             }
 
             Debug.WriteLine("CompassControl::CompassControl(): Is HD: " + _isHd);
-
-            SetRelativeSize(0.6f);
         }
 
         /// <summary>
@@ -152,9 +184,12 @@ namespace Compass.Ui
         /// <param name="e"></param>
         protected override void OnManipulationStarted(ManipulationStartedEventArgs e)
         {
-            _previousX = e.ManipulationOrigin.X;
-            _previousY = e.ManipulationOrigin.Y;
-            _manipulatedArea = AreaAt(_previousX, _previousY, e.ManipulationContainer);
+            if (ManipulationEnabled)
+            {
+                _previousX = e.ManipulationOrigin.X;
+                _previousY = e.ManipulationOrigin.Y;
+                ManipulatedArea = AreaAt(_previousX, _previousY, e.ManipulationContainer);
+            }
         }
 
         /// <summary>
@@ -163,7 +198,7 @@ namespace Compass.Ui
         /// <param name="e"></param>
         protected override void OnManipulationCompleted(ManipulationCompletedEventArgs e)
         {
-            _manipulatedArea = CompassControlArea.None;
+            ManipulatedArea = CompassControlArea.None;
         }
 
         /// <summary>
@@ -172,7 +207,12 @@ namespace Compass.Ui
         /// <param name="e"></param>
         protected override void OnManipulationDelta(ManipulationDeltaEventArgs e)
         {
-            if (_manipulatedArea == CompassControlArea.PlateTop)
+            if (!ManipulationEnabled)
+            {
+                return;
+            }
+
+            if (ManipulatedArea == CompassControlArea.PlateTop)
             {
                 double deltaX = e.ManipulationOrigin.X - _plateCenterX;
                 double deltaY = e.ManipulationOrigin.Y - _plateCenterY;
@@ -197,7 +237,7 @@ namespace Compass.Ui
                 PlateRotation.Angle = (PlateRotation.Angle + angleDelta) % 360;
                 UpdateNeedleAngle();
             }
-            else if (_manipulatedArea == CompassControlArea.Scale)
+            else if (ManipulatedArea == CompassControlArea.Scale)
             {
                 double x = e.ManipulationOrigin.X;
                 double y = e.ManipulationOrigin.Y;
@@ -236,19 +276,11 @@ namespace Compass.Ui
         ///     The size relative to the native size of
         ///     the components. 1.0 is the native size (100 %).
         /// </param>
-        private void SetRelativeSize(float relativeSize)
+        private void SetRelativeSize(double relativeSize)
         {
             if (relativeSize <= 0)
             {
                 return;
-            }
-
-            if (_isHd)
-            {
-                // The app is running on a device with HD resolution. Thus,
-                // increase relativeSize for similar experience as on lower
-                // resolution.
-                relativeSize *= 1.5f;
             }
 
             Plate.Width = relativeSize * PlateNativeWidth;
@@ -266,7 +298,7 @@ namespace Compass.Ui
             Needle.Margin = topMargin;
 
             _plateManipulationBottom =
-                (int)(PlateNativeHeight * PlateManipulationRelativeTopMargin);
+                (int)(PlateNativeHeight * relativeSize * PlateManipulationRelativeTopMargin);
             _scaleManipulationTop = (int)(topMargin.Top + 60 * relativeSize);
             _scaleManipulationBottom = (int)(_scaleManipulationTop + ScaleNativeHeight * relativeSize);
 

@@ -32,6 +32,9 @@ namespace Compass
     public partial class MainPage : PhoneApplicationPage
     {
         // Constants
+        private const String ToggleFullscreenModeIcon = "/Assets/Graphics/fullscreen_icon.png";
+        private const String CenterToLocationIcon = "/Assets/Graphics/center_icon.png";
+        private const String ToggleMapModeIcon = "/Assets/Graphics/map_icon.png";
         private const int CompassUpdateInterval = 40; // Milliseconds (must be multiple of 20)
         private const int CompassDraggingSpeed = 2;
         private const int DefaultMapZoomLevel = 17;
@@ -48,9 +51,11 @@ namespace Compass
         private double _previousY = 0;
         private double _startCompassX = 0;
         private double _startCompassY = 0;
-        private bool _compassBeingMoved = false;
-        private bool _isLocationAllowed = false;
+        private double _compassAngle = 0;
         private double _zoomLevel = DefaultMapZoomLevel;
+        private bool _compassBeingMoved = false;
+        private bool _inFullscreenMode = false;
+        private bool _isLocationAllowed = false;
 
         // Constructor
         public MainPage()
@@ -104,21 +109,29 @@ namespace Compass
 
             // Create a new button and set the text value to the localized
             // string from AppResources.
+            ApplicationBarIconButton appBarToggleFullscreenButton =
+                new ApplicationBarIconButton(new Uri(ToggleFullscreenModeIcon, UriKind.Relative));
+            appBarToggleFullscreenButton.Text = AppResources.ToggleFullscreenButtonText;
+            appBarToggleFullscreenButton.Click += ToggleFullscreenButton_Click;
+            ApplicationBar.Buttons.Add(appBarToggleFullscreenButton);
+
             ApplicationBarIconButton appBarCenterToLocationButton =
-                new ApplicationBarIconButton(new Uri("/Assets/Graphics/center-icon.png", UriKind.Relative));
+                new ApplicationBarIconButton(new Uri(CenterToLocationIcon, UriKind.Relative));
             appBarCenterToLocationButton.Text = AppResources.CenterToLocationButtonText;
             appBarCenterToLocationButton.Click += new EventHandler(CenterToLocation_Click);
             ApplicationBar.Buttons.Add(appBarCenterToLocationButton);
 
             ApplicationBarIconButton appBarToggleMapModeButton =
-                new ApplicationBarIconButton(new Uri("/Assets/Graphics/map-icon.png", UriKind.Relative));
+                new ApplicationBarIconButton(new Uri(ToggleMapModeIcon, UriKind.Relative));
             appBarToggleMapModeButton.Text = AppResources.ToggleMapModeButtonText;
             appBarToggleMapModeButton.Click += new EventHandler(ToggleMapMode_Click);
             ApplicationBar.Buttons.Add(appBarToggleMapModeButton);
 
-        //    // Create a new menu item with the localized string from AppResources.
-        //    ApplicationBarMenuItem appBarMenuItem = new ApplicationBarMenuItem(AppResources.AppBarMenuItemText);
-        //    ApplicationBar.MenuItems.Add(appBarMenuItem);
+            // Create menu items with the localized string from AppResources
+            ApplicationBarMenuItem appBarMenuItem = new ApplicationBarMenuItem(AppResources.Instructions);
+            ApplicationBar.MenuItems.Add(appBarMenuItem);
+            appBarMenuItem = new ApplicationBarMenuItem(AppResources.About);
+            ApplicationBar.MenuItems.Add(appBarMenuItem);
         }
 
         /// <summary>
@@ -359,6 +372,30 @@ namespace Compass
         private void OnMapZoomLevelChanged(object sender, EventArgs e)
         {
             _zoomLevel = MyMap.ZoomLevel;
+        }
+
+        /// <summary>
+        /// Toggles the fullscreen compass mode.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void ToggleFullscreenButton_Click(object sender, EventArgs e)
+        {
+            if (_inFullscreenMode)
+            {
+                CompassControl.Height = 600; // Temporary
+                CompassControl.PlateAngle = _compassAngle;
+                CompassControl.ManipulationEnabled = true;
+                _inFullscreenMode = false;
+            }
+            else
+            {
+                CompassControl.Height = 1200;
+                _compassAngle = CompassControl.PlateAngle;
+                CompassControl.PlateAngle = 0;
+                CompassControl.ManipulationEnabled = false;
+                _inFullscreenMode = true;
+            }
         }
 
         /// <summary>

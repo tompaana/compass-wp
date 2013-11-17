@@ -28,14 +28,9 @@
           </BackBackgroundImageURI>
           <BackTitle>
           </BackTitle>
-          <LargeBackgroundImageURI>Assets\Tiles\CompassIcon691.png</LargeBackgroundImageURI>
-          <LargeBackContent>
-          </LargeBackContent>
-          <LargeBackBackgroundImageURI>
-          </LargeBackBackgroundImageURI>
           <DeviceLockImageURI>
           </DeviceLockImageURI>
-          <HasLarge>True</HasLarge>
+          <HasLarge>False</HasLarge>
         </TemplateFlip>
       </PrimaryToken>
     </Tokens>

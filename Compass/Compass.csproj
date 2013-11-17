@@ -93,6 +93,7 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
+    <Compile Include="AppUtils.cs" />
     <Compile Include="LocalizedStrings.cs" />
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
@@ -103,7 +104,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>AppResources.resx</DependentUpon>
     </Compile>
-    <Compile Include="Ui\CompassControl.xaml.cs">
+    <Compile Include="CompassControl.xaml.cs">
       <DependentUpon>CompassControl.xaml</DependentUpon>
     </Compile>
   </ItemGroup>
@@ -116,7 +117,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Ui\CompassControl.xaml">
+    <Page Include="CompassControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -129,25 +130,20 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Assets\AlignmentGrid.png" />
-    <Content Include="Assets\Graphics\calibration-hint.png" />
-    <Content Include="Assets\Graphics\center-icon.png" />
-    <Content Include="Assets\Graphics\compass-needle.png" />
-    <Content Include="Assets\Graphics\compass-plate.png" />
-    <Content Include="Assets\Graphics\here-icon.png" />
-    <Content Include="Assets\Graphics\map-icon.png" />
-    <Content Include="Assets\Graphics\scale-100.png" />
-    <Content Include="Assets\Graphics\scale-shadow.png" />
+    <Content Include="Assets\Graphics\calibration_hint.png" />
+    <Content Include="Assets\Graphics\center_icon.png" />
+    <Content Include="Assets\Graphics\compass_needle.png" />
+    <Content Include="Assets\Graphics\compass_plate.png" />
+    <Content Include="Assets\Graphics\fullscreen_icon.png" />
+    <Content Include="Assets\Graphics\location_marker.png" />
+    <Content Include="Assets\Graphics\map_icon.png" />
+    <Content Include="Assets\Graphics\map_marker.png" />
     <Content Include="Assets\Graphics\scale.png" />
+    <Content Include="Assets\Graphics\scale_100.png" />
+    <Content Include="Assets\Graphics\scale_shadow.png" />
     <Content Include="Assets\Tiles\CompassIcon100NoBg.png" />
     <Content Include="Assets\Tiles\CompassIcon159.png" />
     <Content Include="Assets\Tiles\CompassIcon336.png" />
-    <Content Include="Assets\Tiles\CompassIcon691.png" />
-    <Content Include="Assets\Tiles\IconicTileMediumLarge.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Assets\Tiles\IconicTileSmall.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources\AppResources.resx">
