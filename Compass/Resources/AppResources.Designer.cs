@@ -106,6 +106,15 @@ namespace Compass.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Failed to start compass. Please try restarting the application..
+        /// </summary>
+        public static string FailedToStartCompassMessage {
+            get {
+                return ResourceManager.GetString("FailedToStartCompassMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Instructions.
         /// </summary>
         public static string Instructions {
@@ -147,6 +156,15 @@ namespace Compass.Resources {
         public static string LocationUsageQueryTitle {
             get {
                 return ResourceManager.GetString("LocationUsageQueryTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Your device does not have compass supported. The application will still run, but the compass needle will not show the correct heading..
+        /// </summary>
+        public static string NoCompassMessage {
+            get {
+                return ResourceManager.GetString("NoCompassMessage", resourceCulture);
             }
         }
         

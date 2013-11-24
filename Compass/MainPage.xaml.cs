@@ -32,9 +32,11 @@ namespace Compass
     public partial class MainPage : PhoneApplicationPage
     {
         // Constants
-        private const String ToggleFullscreenModeIcon = "/Assets/Graphics/fullscreen_icon.png";
-        private const String CenterToLocationIcon = "/Assets/Graphics/center_icon.png";
-        private const String ToggleMapModeIcon = "/Assets/Graphics/map_icon.png";
+        private const String DebugTag = "MainPage.";
+        private const String ToggleFullscreenModeIconUri = "/Assets/Graphics/fullscreen_icon.png";
+        private const String CenterToLocationIconUri = "/Assets/Graphics/center_icon.png";
+        private const String ToggleMapModeIconUri = "/Assets/Graphics/map_icon.png";
+        private const String LocationMarkerImageUri = "/Assets/Graphics/location_marker.png";
         private const int CompassUpdateInterval = 40; // Milliseconds (must be multiple of 20)
         private const int CompassDraggingSpeed = 2;
         private const int DefaultMapZoomLevel = 17;
@@ -61,7 +63,23 @@ namespace Compass
         public MainPage()
         {
             InitializeComponent();
+            InitializeAndStartCompass();
 
+            _appUtils = AppUtils.GetInstance();
+            _appUtils.LoadSettings();
+
+            UiHelper.ConstructCalibrationView(CalibrationView);
+
+            this.Loaded += MainPage_Loaded;
+
+        }
+
+        /// <summary>
+        /// Checks whether the compass is supported or not, initialises and
+        /// starts it.
+        /// </summary>
+        private void InitializeAndStartCompass()
+        {
             if (Microsoft.Devices.Sensors.Compass.IsSupported)
             {
                 // Setup and start the compass
@@ -73,13 +91,13 @@ namespace Compass
                 }
                 catch (InvalidOperationException e)
                 {
-                    Debug.WriteLine("MainPage::MainPage(): Failed to set compass update interval: "
+                    Debug.WriteLine(DebugTag + "MainPage(): Failed to set compass update interval: "
                         + e.ToString());
                 }
 
                 // Set call backs for events
-                /*_compass.Calibrate +=
-                    new EventHandler<CalibrationEventArgs>(OnCalibrate);*/
+                _compass.Calibrate +=
+                    new EventHandler<CalibrationEventArgs>(OnCalibrate);
                 _compass.CurrentValueChanged +=
                     new EventHandler<SensorReadingEventArgs<CompassReading>>(
                         OnCompassReadingChanged);
@@ -90,19 +108,13 @@ namespace Compass
                 }
                 catch (InvalidOperationException)
                 {
-                    // TODO: Show an error message
+                    MessageBox.Show(AppResources.FailedToStartCompassMessage);
                 }
             }
             else
             {
-                // TODO: Show an error message
+                MessageBox.Show(AppResources.NoCompassMessage);
             }
-
-            _appUtils = AppUtils.GetInstance();
-            _appUtils.LoadSettings();
-
-            this.Loaded += MainPage_Loaded;
-
         }
 
         /// <summary>
@@ -110,7 +122,7 @@ namespace Compass
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        void MainPage_Loaded(object sender, RoutedEventArgs e)
+        private void MainPage_Loaded(object sender, RoutedEventArgs e)
         {
             if (!_appUtils.LocationAllowed)
             {
@@ -166,19 +178,19 @@ namespace Compass
             // Create a new button and set the text value to the localized
             // string from AppResources.
             ApplicationBarIconButton appBarToggleFullscreenButton =
-                new ApplicationBarIconButton(new Uri(ToggleFullscreenModeIcon, UriKind.Relative));
+                new ApplicationBarIconButton(new Uri(ToggleFullscreenModeIconUri, UriKind.Relative));
             appBarToggleFullscreenButton.Text = AppResources.ToggleFullscreenButtonText;
             appBarToggleFullscreenButton.Click += ToggleFullscreenButton_Click;
             ApplicationBar.Buttons.Add(appBarToggleFullscreenButton);
 
             ApplicationBarIconButton appBarCenterToLocationButton =
-                new ApplicationBarIconButton(new Uri(CenterToLocationIcon, UriKind.Relative));
+                new ApplicationBarIconButton(new Uri(CenterToLocationIconUri, UriKind.Relative));
             appBarCenterToLocationButton.Text = AppResources.CenterToLocationButtonText;
             appBarCenterToLocationButton.Click += new EventHandler(CenterToLocation_Click);
             ApplicationBar.Buttons.Add(appBarCenterToLocationButton);
 
             ApplicationBarIconButton appBarToggleMapModeButton =
-                new ApplicationBarIconButton(new Uri(ToggleMapModeIcon, UriKind.Relative));
+                new ApplicationBarIconButton(new Uri(ToggleMapModeIconUri, UriKind.Relative));
             appBarToggleMapModeButton.Text = AppResources.ToggleMapModeButtonText;
             appBarToggleMapModeButton.Click += new EventHandler(ToggleMapMode_Click);
             ApplicationBar.Buttons.Add(appBarToggleMapModeButton);
@@ -227,7 +239,7 @@ namespace Compass
             {
                 // Failed get the current location. Location might be disabled
                 // in settings
-                Debug.WriteLine("MainPage::GetCurrentLocation(): Failed to get current location!");
+                Debug.WriteLine(DebugTag + "GetCurrentLocation(): Failed to get current location!");
             }
         }
 
@@ -247,7 +259,7 @@ namespace Compass
             // Load the marker image
             _hereMarkerImage = new Image();
             BitmapImage bitmapImage = new BitmapImage();
-            bitmapImage.UriSource = new Uri("/Assets/Graphics/here-icon.png", UriKind.Relative);
+            bitmapImage.UriSource = new Uri(LocationMarkerImageUri, UriKind.Relative);
             _hereMarkerImage.Source = bitmapImage;
 
             // Add the items to the map
@@ -300,7 +312,7 @@ namespace Compass
 
             Compass.Ui.CompassControl.CompassControlArea area =
                 CompassControl.ManipulatedArea;
-            Debug.WriteLine("MainPage::OnManipulationStarted(): Area at ["
+            Debug.WriteLine(DebugTag + "OnManipulationStarted(): Area at ["
                 + x + ", " + y + "] == " + area);
 
             if (area == Compass.Ui.CompassControl.CompassControlArea.PlateCenter
@@ -379,6 +391,21 @@ namespace Compass
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void OnCalibrate(object sender, CalibrationEventArgs e)
+        {
+            Debug.WriteLine(DebugTag + ".OnCalibrate(): " + e.ToString());
+            Debug.WriteLine(DebugTag + ".OnCalibrate(): Accuracy: " + _compass.CurrentValue.HeadingAccuracy);
+
+            /*Dispatcher.BeginInvoke(()
+                => CalibrationView.Visibility = (CalibrationView.Visibility == Visibility.Visible) ? Visibility.Collapsed : Visibility.Visible
+                );*/
+        }
+
+        /// <summary>
         /// Updates the needle angle of the compass control. This is a call
         /// back for the compass sensor, and gets called everytime the reading
         /// value is changed. The interval is defined by CompassUpdateInterval
@@ -395,9 +422,9 @@ namespace Compass
                 => DebugTextBlock.Text =
                     "\nTrue: " + e.SensorReading.TrueHeading
                     + "\nMagnetic: " + e.SensorReading.MagneticHeading
-                    + "\nV3: [" + e.SensorReading.MagnetometerReading.X + ", "
+                    /*+ "\nV3: [" + e.SensorReading.MagnetometerReading.X + ", "
                     + e.SensorReading.MagnetometerReading.Y + ", "
-                    + e.SensorReading.MagnetometerReading.Z + "]"
+                    + e.SensorReading.MagnetometerReading.Z + "]"*/
                     + "\nAccuracy: " + e.SensorReading.HeadingAccuracy
             );
         }

@@ -108,8 +108,9 @@
       <DependentUpon>CompassControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="LocationUsageQueryDialog.xaml.cs">
-        <DependentUpon>LocationUsageQueryDialog.xaml</DependentUpon>
+      <DependentUpon>LocationUsageQueryDialog.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UiHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml">
@@ -138,6 +139,7 @@
   <ItemGroup>
     <Content Include="Assets\AlignmentGrid.png" />
     <Content Include="Assets\Graphics\calibration_hint.png" />
+    <Content Include="Assets\Graphics\calibration_hint_dark.png" />
     <Content Include="Assets\Graphics\center_icon.png" />
     <Content Include="Assets\Graphics\compass_needle.png" />
     <Content Include="Assets\Graphics\compass_plate.png" />

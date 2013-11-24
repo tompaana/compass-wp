@@ -161,4 +161,10 @@
   <data name="LocationUsageQueryTitle" xml:space="preserve">
     <value>Use of location</value>
   </data>
+  <data name="FailedToStartCompassMessage" xml:space="preserve">
+    <value>Failed to start compass. Please try restarting the application.</value>
+  </data>
+  <data name="NoCompassMessage" xml:space="preserve">
+    <value>Your device does not have compass supported. The application will still run, but the compass needle will not show the correct heading.</value>
+  </data>
 </root>

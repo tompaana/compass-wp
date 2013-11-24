@@ -26,15 +26,13 @@
                   Center="65, 24.5"
                   ZoomLevel="5"
                   ZoomLevelChanged="OnMapZoomLevelChanged" />
-        
+
         <TextBlock x:Name="DebugTextBlock"
-                   Margin="10, 10, 10, 10"
-                   Width="480"
-                   Height="800"
+                   Margin="10,0,-10,650"
                    Text="DEBUG BOX"
                    Foreground="#000000"
                    />
-                   
+
         <!-- Compass control is the visible compass item -->
         <src:CompassControl
             x:Name="CompassControl"
@@ -42,6 +40,14 @@
             Height="{Binding ElementName=CompassControl, Path=PlateHeight}"
             />
 
+        <!-- Fullscreen view to help to calibrate compass -->
+        <Grid
+            x:Name="CalibrationView"
+            Width="480"
+            Height="800"
+            Visibility="Collapsed" />
+
+        <!-- Dialog for querying the permission to use location -->
         <src:LocationUsageQueryDialog
             x:Name="LocationUsageQueryDialog"
             />
