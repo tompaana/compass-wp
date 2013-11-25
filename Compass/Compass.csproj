@@ -154,6 +154,7 @@
     <Content Include="Assets\Sounds\calibration.wav">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Assets\Sounds\calibration_2.wav" />
     <Content Include="Assets\Tiles\CompassIcon100NoBg.png" />
     <Content Include="Assets\Tiles\CompassIcon159.png" />
     <Content Include="Assets\Tiles\CompassIcon336.png" />

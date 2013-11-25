@@ -45,7 +45,8 @@ namespace Compass
         private const String ToggleMapModeIconUri = "Assets/Graphics/map_icon.png";
         private const String LocationMarkerImageUri = "Assets/Graphics/location_marker.png";
         private const String LocationMarkerImageGrayUri = "Assets/Graphics/location_marker_gray.png";
-        private const String CalibrationSoundEffectUri = "Assets/Sounds/calibration.wav";
+        private const String CalibrationSoundEffectUri1 = "Assets/Sounds/calibration.wav";
+        private const String CalibrationSoundEffectUri2 = "Assets/Sounds/calibration_2.wav";
         private const double CompassControlPlateHeightNormal = 400;
         private const double CompassControlPlateHeightFullscreen = 690;
         private const double DegreesToRads = Math.PI / 180;
@@ -60,6 +61,7 @@ namespace Compass
         private const int LocationUpdateInterval = 10; // Seconds
         private const int CalibrationTimerInterval = 1; // Seconds
         private const int CalibrationVibraDuration = 30; // Milliseconds
+        private const int CalibrationSuccessfulVibraDuration = 1000; // Milliseconds
 
         // Members
         private Microsoft.Devices.Sensors.Compass _compass = null;
@@ -69,7 +71,8 @@ namespace Compass
         private MapOverlay _locationMarkerOverlay = null;
         private Ellipse _accuracyCircle = null;
         private Image _locationMarkerImage = null;
-        private SoundEffectInstance _calibrationSoundEffect = null;
+        private SoundEffectInstance _calibrationSoundEffect1 = null;
+        private SoundEffectInstance _calibrationSoundEffect2 = null;
         private Timer _locationTimer = null;
         private Timer _calibrationTimer = null;
         private double _locationAccuracy = 0;
@@ -227,13 +230,16 @@ namespace Compass
                 CalibrationView.Children.Add(element);                
             }
 
-            // Create the sound effect
+            // Create the sound effects
             try
             {
                 StreamResourceInfo stream =
-                    Application.GetResourceStream(new Uri(CalibrationSoundEffectUri, UriKind.Relative));
+                    Application.GetResourceStream(new Uri(CalibrationSoundEffectUri1, UriKind.Relative));
                 SoundEffect soundeffect = SoundEffect.FromStream(stream.Stream);
-                _calibrationSoundEffect = soundeffect.CreateInstance();
+                _calibrationSoundEffect1 = soundeffect.CreateInstance();
+                stream = Application.GetResourceStream(new Uri(CalibrationSoundEffectUri2, UriKind.Relative));
+                soundeffect = SoundEffect.FromStream(stream.Stream);
+                _calibrationSoundEffect2 = soundeffect.CreateInstance();
             }
             catch (Exception e)
             {
@@ -462,6 +468,15 @@ namespace Compass
                 ApplicationBar.IsVisible = true;
                 CalibrationView.Visibility = Visibility.Collapsed;
             });
+
+            VibrateController vibrateController = VibrateController.Default;
+            vibrateController.Start(TimeSpan.FromMilliseconds(CalibrationSuccessfulVibraDuration));
+
+            if (_calibrationSoundEffect2 != null)
+            {
+                FrameworkDispatcher.Update();
+                _calibrationSoundEffect2.Play();
+            }
         }
 
         #endregion // Compass sensor event handling
@@ -670,10 +685,10 @@ namespace Compass
             VibrateController vibrateController = VibrateController.Default;
             vibrateController.Start(TimeSpan.FromMilliseconds(CalibrationVibraDuration));
 
-            if (_calibrationSoundEffect != null)
+            if (_calibrationSoundEffect1 != null)
             {
                 FrameworkDispatcher.Update();
-                _calibrationSoundEffect.Play();
+                _calibrationSoundEffect1.Play();
             }
         }
 
