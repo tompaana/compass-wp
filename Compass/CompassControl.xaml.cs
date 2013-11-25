@@ -22,6 +22,8 @@ namespace Compass.Ui
     public partial class CompassControl : UserControl
     {
         // Constants
+        private const String DebugTag = "CompassControl.";
+        private const double DefaultPlateHeight = 400;
         private const double RadiansToDegreesCoefficient = 57.2957795; // 180 / PI
         private const double ScaleRelativeTopMargin = 0.32f;
         private const double PlateManipulationRelativeTopMargin = 0.15f;
@@ -50,7 +52,6 @@ namespace Compass.Ui
         private int _plateManipulationBottom = 0;
         private int _scaleManipulationTop = 0;
         private int _scaleManipulationBottom = 0;
-        private Boolean _isHd = false;
 
         // Properties
 
@@ -77,11 +78,22 @@ namespace Compass.Ui
             private set;
         }
 
+        /// <summary>
+        /// The width of the compass control (plate).
+        /// </summary>
         public double PlateWidth
         {
             get
             {
-                return Plate.ActualWidth;
+                return Plate.Width;
+            }
+            set
+            {
+                if (value > 0 && value != Plate.ActualWidth)
+                {
+                    double relativeSize = value / PlateNativeWidth;
+                    SetRelativeSize(relativeSize);
+                }
             }
         }
 
@@ -92,7 +104,7 @@ namespace Compass.Ui
         {
             get
             {
-                return Plate.ActualHeight;
+                return Plate.Height;
             }
             set
             {
@@ -135,20 +147,9 @@ namespace Compass.Ui
         public CompassControl()
         {
             InitializeComponent();
+            PlateHeight = DefaultPlateHeight;
             ManipulatedArea = CompassControlArea.None;
             ManipulationEnabled = true;
-
-            if (Application.Current.Host.Content.ActualWidth >= 720)
-            {
-                _isHd = true;
-                PlateHeight = 600;
-            }
-            else
-            {
-                PlateHeight = 400;
-            }
-
-            Debug.WriteLine("CompassControl::CompassControl(): Is HD: " + _isHd);
         }
 
         /// <summary>
@@ -288,10 +289,16 @@ namespace Compass.Ui
         {
             if (relativeSize <= 0)
             {
+                Debug.WriteLine(DebugTag + "SetRelativeSize(): Invalid argument (" + relativeSize + ")!");
                 return;
             }
 
             Plate.Width = relativeSize * PlateNativeWidth;
+            Plate.Height = relativeSize * PlateNativeHeight;
+
+            Debug.WriteLine(DebugTag + "SetRelativeSize(): " + relativeSize
+                + " -> Plate size: " + Plate.Width + "x" + Plate.Height);
+
             ScaleShadow.Width = relativeSize * ScaleNativeWidth;
             Scale.Width = relativeSize * ScaleNativeWidth;
             Needle.Width = relativeSize * NeedleNativeWidth;
@@ -310,9 +317,10 @@ namespace Compass.Ui
             _scaleManipulationTop = (int)(topMargin.Top + 60 * relativeSize);
             _scaleManipulationBottom = (int)(_scaleManipulationTop + ScaleNativeHeight * relativeSize);
 
-            Debug.WriteLine("Manipulation margins: " + _plateManipulationBottom
-                + ", " + _scaleManipulationTop
-                + ", " + _scaleManipulationBottom);
+            Debug.WriteLine(DebugTag + "SetRelativeSize(): Manipulation margins: "
+                + _plateManipulationBottom + ", "
+                + _scaleManipulationTop + ", "
+                + _scaleManipulationBottom);
         }
 
         /// <summary>

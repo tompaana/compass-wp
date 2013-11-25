@@ -44,7 +44,12 @@ namespace Compass
         private const String CenterToLocationIconUri = "Assets/Graphics/center_icon.png";
         private const String ToggleMapModeIconUri = "Assets/Graphics/map_icon.png";
         private const String LocationMarkerImageUri = "Assets/Graphics/location_marker.png";
+        private const String LocationMarkerImageGrayUri = "Assets/Graphics/location_marker_gray.png";
         private const String CalibrationSoundEffectUri = "Assets/Sounds/calibration.wav";
+        private const double CompassControlPlateHeightNormal = 400;
+        private const double CompassControlPlateHeightFullscreen = 690;
+        private const double DegreesToRads = Math.PI / 180;
+        private const double CalcConstant = 2 * Math.PI * 6378137;
         private const double CalibrationViewHorizontalMargin = 30;
         private const double CalibrationViewVerticalMargin = 50;
         private const double LocationMarkerImageSize = 40;
@@ -61,29 +66,32 @@ namespace Compass
         private AppUtils _appUtils = null;
         private GeoCoordinate _coordinate = null;
         private MapLayer _mapLayer = null;
+        private MapOverlay _locationMarkerOverlay = null;
+        private Ellipse _accuracyCircle = null;
         private Image _locationMarkerImage = null;
         private SoundEffectInstance _calibrationSoundEffect = null;
         private Timer _locationTimer = null;
         private Timer _calibrationTimer = null;
         private double _locationAccuracy = 0;
-        private double _previousX = 0;
-        private double _previousY = 0;
+        private double _previousManipulationDeltaX = 0;
+        private double _previousManipulationDeltaY = 0;
         private double _startCompassX = 0;
         private double _startCompassY = 0;
         private double _compassAngle = 0;
+        private double _previousCompassX = 0;
+        private double _previousCompassY = 0;
         private double _zoomLevel = DefaultMapZoomLevel;
         private bool _compassBeingMoved = false;
         private bool _inFullscreenMode = false;
+        private bool _locationFound = false;
 
         // Constructor
         public MainPage()
         {
             InitializeComponent();
             InitializeAndStartCompass();
-
-            _appUtils = AppUtils.GetInstance();
-            _appUtils.LoadSettings();
-
+            RestoreSettings();
+            CreateMapItems();
             ConstructCalibrationView();
 
 #if (DEBUG)
@@ -140,12 +148,23 @@ namespace Compass
         }
 
         /// <summary>
+        /// Restore the application settings.
+        /// </summary>
+        private void RestoreSettings()
+        {
+            _appUtils = AppUtils.GetInstance();
+            _appUtils.LoadSettings();
+            _coordinate = _appUtils.LastKnownLocation;
+            MyMap.CartographicMode = _appUtils.MapMode;
+        }
+
+        /// <summary>
         /// Creates the calibration view components and defines the view 
         /// properties.
         /// </summary>
         private void ConstructCalibrationView()
         {
-            CalibrationView.Background = UiHelper.ThemeBackgroundBrush();
+            CalibrationView.Background = UiHelper.GetThemeBackgroundBrush();
             CalibrationView.Background.Opacity = 0.5;
 
             Thickness margin = new Thickness();
@@ -209,10 +228,19 @@ namespace Compass
             }
 
             // Create the sound effect
-            StreamResourceInfo stream =
-                Application.GetResourceStream(new Uri(CalibrationSoundEffectUri, UriKind.Relative));
-            SoundEffect soundeffect = SoundEffect.FromStream(stream.Stream);
-            _calibrationSoundEffect = soundeffect.CreateInstance();
+            try
+            {
+                StreamResourceInfo stream =
+                    Application.GetResourceStream(new Uri(CalibrationSoundEffectUri, UriKind.Relative));
+                SoundEffect soundeffect = SoundEffect.FromStream(stream.Stream);
+                _calibrationSoundEffect = soundeffect.CreateInstance();
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine(DebugTag
+                    + "ConstructCalibrationView(): Failed to initialise sound effect: "
+                    + e.ToString());
+            }
         }
 
         /// <summary>
@@ -251,29 +279,63 @@ namespace Compass
         }
 
         /// <summary>
-        /// Helper method to draw a single marker on top of the map.
+        /// (Re)creates the location marker image and set it to the overlay.
+        /// The color of the marker depends on whether the location has been
+        /// found or not.
         /// </summary>
-        /// <param name="coordinate">GeoCoordinate of the marker</param>
-        /// <param name="mapLayer">Map layer to add the marker</param>
-        private void CreateMapItems()
+        private void CreateAndSetLocationMarkerImage()
+        {
+            Debug.WriteLine(DebugTag + "CreateAndSetLocationMarkerImage(): " + _locationFound);
+            _locationMarkerImage = new Image();
+            BitmapImage bitmapImage = new BitmapImage();
+            bitmapImage.UriSource = new Uri(_locationFound ?
+                LocationMarkerImageUri : LocationMarkerImageGrayUri, UriKind.Relative);
+            _locationMarkerImage.Source = bitmapImage;
+            _locationMarkerImage.Width = LocationMarkerImageSize;
+            _locationMarkerOverlay.Content = _locationMarkerImage;
+        }
+
+        /// <summary>
+        /// Creates the map overlay objects.
+        /// </summary>
+        /// <returns>True, if items successfully created. False, if already
+        /// created or no location (last known or otherwise) available.</returns>
+        private bool CreateMapItems()
         {
             if (_mapLayer != null || _coordinate == null)
             {
-                // Already created or the user has not been located yet!
-                return;
+                Debug.WriteLine(DebugTag + "CreateMapItems(): Already created or no coordinate!");
+                return false;
             }
 
-            // Load the marker image
-            _locationMarkerImage = new Image();
-            BitmapImage bitmapImage = new BitmapImage();
-            bitmapImage.UriSource = new Uri(LocationMarkerImageUri, UriKind.Relative);
-            _locationMarkerImage.Source = bitmapImage;
-            _locationMarkerImage.Width = LocationMarkerImageSize;
+            System.Windows.Point positionOrigin = new System.Windows.Point(0.5, 0.5);
+
+            _accuracyCircle = UiHelper.CreateFilledCircle(LocationMarkerImageSize * 4, 75, 200, 0, 0);
+
+            MapOverlay accuracyCircleOverlay = new MapOverlay();
+            accuracyCircleOverlay.Content = _accuracyCircle;
+            accuracyCircleOverlay.PositionOrigin = positionOrigin;
+
+            _locationMarkerOverlay = new MapOverlay();
+            CreateAndSetLocationMarkerImage();
+            _locationMarkerOverlay.PositionOrigin = positionOrigin;
 
             // Add the items to the map
             _mapLayer = new MapLayer();
+            _mapLayer.Add(accuracyCircleOverlay);
+            _mapLayer.Add(_locationMarkerOverlay);
+
             UpdateMapItems();
+
             MyMap.Layers.Add(_mapLayer);
+
+            if (!_locationFound && _coordinate != null)
+            {
+                Debug.WriteLine(DebugTag + "CreateMapItems(): Using the last known location.");
+                MyMap.SetView(_coordinate, DefaultMapZoomLevel, MapAnimationKind.Parabolic);
+            }
+
+            return true;
         }
 
         #endregion // Construction helper methods
@@ -430,8 +492,8 @@ namespace Compass
                 _startCompassX = margin.Left;
                 _startCompassY = margin.Top;
 
-                _previousX = -1;
-                _previousY = -1;
+                _previousManipulationDeltaX = -1;
+                _previousManipulationDeltaY = -1;
 
                 _compassBeingMoved = true;
                 e.Handled = true;
@@ -458,17 +520,17 @@ namespace Compass
                 double diffX = 0;
                 double diffY = 0;
 
-                if (_previousX == -1 && _previousY == -1)
+                if (_previousManipulationDeltaX == -1 && _previousManipulationDeltaY == -1)
                 {
                     ManipulationDelta delta = e.DeltaManipulation;
-                    _previousX = x - delta.Scale.X;
-                    _previousY = y - delta.Scale.Y;
+                    _previousManipulationDeltaX = x - delta.Scale.X;
+                    _previousManipulationDeltaY = y - delta.Scale.Y;
                 }
 
-                diffX = (_previousX - x) * CompassDraggingSpeed;
-                diffY = (_previousY - y) * CompassDraggingSpeed;
-                _previousX = x;
-                _previousY = y;
+                diffX = (_previousManipulationDeltaX - x) * CompassDraggingSpeed;
+                diffY = (_previousManipulationDeltaY - y) * CompassDraggingSpeed;
+                _previousManipulationDeltaX = x;
+                _previousManipulationDeltaY = y;
 
                 Thickness margin = CompassControl.Margin;
                 margin.Top -= diffY;
@@ -485,30 +547,17 @@ namespace Compass
 
         #endregion // Touch event handling
 
-        /// <summary>
-        /// Called when the use of location is allowed. Stores the setting and
-        /// will start retrieving the user's location.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void OnLocationUsageAllowed(object sender, EventArgs e)
-        {
-            LocationUsageQueryDialog.LocationUsageAllowed -= OnLocationUsageAllowed;
-            _appUtils.LocationAllowed = true;
-
-            _locationTimer = new Timer(GetCurrentLocation, null,
-                TimeSpan.FromSeconds(0),
-                TimeSpan.FromSeconds(LocationUpdateInterval));
-        }
+        #region Location and map handling
 
         /// <summary>
-        /// 
+        /// Tries to get the current location of the user. When the location is
+        /// received, will make a request to update the map and map items
+        /// accordingly.
         /// </summary>
         private async void GetCurrentLocation(Object state)
         {
             Geolocator geolocator = new Geolocator();
             geolocator.DesiredAccuracy = PositionAccuracy.High;
-            bool firstTime = (_coordinate == null) ? true : false;
 
             try
             {
@@ -523,15 +572,27 @@ namespace Compass
                         new GeoCoordinate(currentPosition.Coordinate.Latitude,
                                           currentPosition.Coordinate.Longitude);
 
-                    if (firstTime)
+                    if (!_locationFound)
                     {
-                        CreateMapItems();
+                        _locationFound = true;
+
+                        if (!CreateMapItems())
+                        {
+                            // Map items already created. Update the location
+                            // marker (to red to indicate that the location is
+                            // up-to-date.
+                            CreateAndSetLocationMarkerImage();
+                        }
+
                         MyMap.SetView(_coordinate, DefaultMapZoomLevel, MapAnimationKind.Parabolic);
                     }
                     else
                     {
                         UpdateMapItems();
                     }
+
+                    // Store this location
+                    AppUtils.GetInstance().LastKnownLocation = _coordinate;
                 });
             }
             catch (Exception)
@@ -543,36 +604,27 @@ namespace Compass
         }
 
         /// <summary>
-        /// 
+        /// Updates the accuracy circle and the location marker position based
+        /// on the current geocoordinate and its accuracy.
         /// </summary>
         private void UpdateMapItems()
         {
-            _mapLayer.Clear();
-
             // The ground resolution (in meters per pixel) varies depending on the level of detail
             // and the latitude at which it’s measured. It can be calculated as follows:
             double metersPerPixels =
-                (Math.Cos(_coordinate.Latitude * Math.PI / 180) * 2 * Math.PI * 6378137)
+                (Math.Cos(_coordinate.Latitude * DegreesToRads) * CalcConstant)
                 / (256 * Math.Pow(2, MyMap.ZoomLevel));
             double radius = _locationAccuracy / metersPerPixels;
 
-            Ellipse ellipse = new Ellipse();
-            ellipse.Width = radius * 2;
-            ellipse.Height = radius * 2;
-            ellipse.Fill = new SolidColorBrush(System.Windows.Media.Color.FromArgb(75, 200, 0, 0));
+            _accuracyCircle.Width = radius * 2;
+            _accuracyCircle.Height = radius * 2;
 
-            MapOverlay overlay = new MapOverlay();
-            overlay.Content = ellipse;
-            overlay.GeoCoordinate = new GeoCoordinate(_coordinate.Latitude, _coordinate.Longitude);
-            overlay.PositionOrigin = new System.Windows.Point(0.5, 0.5);
-            _mapLayer.Add(overlay);
+            foreach (MapOverlay overlay in _mapLayer)
+            {
+                overlay.GeoCoordinate = _coordinate;
+            }
 
-            // Create a MapOverLay with the marker image and add it to the map layer
-            overlay = new MapOverlay();
-            overlay.Content = _locationMarkerImage;
-            overlay.GeoCoordinate = new GeoCoordinate(_coordinate.Latitude, _coordinate.Longitude);
-            overlay.PositionOrigin = new System.Windows.Point(0.5, 0.5);
-            _mapLayer.Add(overlay);
+            MyMap.InvalidateMeasure();
         }
 
         /// <summary>
@@ -583,6 +635,29 @@ namespace Compass
         private void OnMapZoomLevelChanged(object sender, EventArgs e)
         {
             _zoomLevel = MyMap.ZoomLevel;
+
+            if (_coordinate != null)
+            {
+                UpdateMapItems();
+            }
+        }
+
+        #endregion // Location and map handling
+
+        /// <summary>
+        /// Called when the use of location is allowed. Stores the setting and
+        /// will start retrieving the user's location.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void OnLocationUsageAllowed(object sender, EventArgs e)
+        {
+            LocationUsageQueryDialog.LocationUsageAllowed -= OnLocationUsageAllowed;
+            _appUtils.LocationAllowed = true;
+
+            _locationTimer = new Timer(GetCurrentLocation, null,
+                TimeSpan.FromSeconds(0),
+                TimeSpan.FromSeconds(LocationUpdateInterval));
         }
 
         /// <summary>
@@ -621,21 +696,41 @@ namespace Compass
         /// <param name="e"></param>
         private void ToggleFullscreenButton_Click(object sender, EventArgs e)
         {
+            Debug.WriteLine(DebugTag + "ToggleFullscreenButton_Click(): "
+                + _inFullscreenMode + " -> " + !_inFullscreenMode);
+
+            Thickness margin = new Thickness();
+
             if (_inFullscreenMode)
             {
-                CompassControl.Height = 600; // Temporary
+                // To normal mode
+                margin.Left = _previousCompassX;
+                margin.Top = _previousCompassY;
+
+                CompassControl.PlateHeight = CompassControlPlateHeightNormal;
                 CompassControl.PlateAngle = _compassAngle;
-                CompassControl.ManipulationEnabled = true;
-                _inFullscreenMode = false;
+                FullscreenBackground.Visibility = Visibility.Collapsed;
             }
             else
             {
-                CompassControl.Height = 1200;
+                // To fullscreen mode
                 _compassAngle = CompassControl.PlateAngle;
+                _previousCompassX = CompassControl.Margin.Left;
+                _previousCompassY = CompassControl.Margin.Top;
+
+                margin.Top = -60;
+                margin.Left = 20;
+
+                CompassControl.PlateHeight = CompassControlPlateHeightFullscreen;
                 CompassControl.PlateAngle = 0;
-                CompassControl.ManipulationEnabled = false;
-                _inFullscreenMode = true;
+                FullscreenBackground.Visibility = Visibility.Visible;
             }
+
+            CompassControl.Margin = margin;
+            CompassControl.Width = CompassControl.PlateWidth;
+            CompassControl.Height = CompassControl.PlateHeight;
+            CompassControl.ManipulationEnabled = !CompassControl.ManipulationEnabled;
+            _inFullscreenMode = !_inFullscreenMode;
         }
 
         /// <summary>

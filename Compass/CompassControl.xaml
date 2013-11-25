@@ -32,7 +32,6 @@
         <Image x:Name="ScaleShadow"
                Source="/Assets/Graphics/scale_shadow.png"
                Width="276"
-               Height="276"
                Margin="0, 190, 0, 0"
                Stretch="Uniform" />
         <Image x:Name="Scale"

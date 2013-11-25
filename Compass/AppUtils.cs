@@ -22,7 +22,7 @@ namespace Compass
     class AppUtils
     {
         // Constants
-        private const String Tag = "Compass.AppUtils";
+        private const String Tag = "AppUtils.";
         private const String LocationAllowedId = "LocationAllowed";
         private const String LastKnownLocationId = "Location";
         private const String MapModeId = "MapMode";
@@ -84,10 +84,14 @@ namespace Compass
                 LocationAllowed = (bool)_appSettings[LocationAllowedId];
                 LastKnownLocation = (GeoCoordinate)_appSettings[LastKnownLocationId];
                 MapMode = (MapCartographicMode)_appSettings[MapModeId];
+                Debug.WriteLine(Tag + "LoadSettings(): Loaded: "
+                    + LocationAllowed + ", "
+                    + LastKnownLocation + ", "
+                    + MapMode);
             }
             catch (System.Collections.Generic.KeyNotFoundException e)
             {
-                Debug.WriteLine(Tag + ".LoadSettings(): " + e.ToString());
+                Debug.WriteLine(Tag + "LoadSettings(): " + e.ToString());
             }
         }
 
@@ -99,17 +103,16 @@ namespace Compass
             try
             {
                 _appSettings[LocationAllowedId] = LocationAllowed;
-
-                if (LastKnownLocation != null)
-                {
-                    _appSettings[LastKnownLocationId] = LastKnownLocation;
-                }
-
+                _appSettings[LastKnownLocationId] = LastKnownLocation;
                 _appSettings[MapModeId] = MapMode;
+                Debug.WriteLine(Tag + "SaveSettings(): Saved: "
+                    + LocationAllowed + ", "
+                    + LastKnownLocation + ", "
+                    + MapMode);
             }
             catch (ArgumentException e)
             {
-                Debug.WriteLine(Tag + ".SaveSettings(): " + e.ToString());
+                Debug.WriteLine(Tag + "SaveSettings(): " + e.ToString());
             }
         }
     }

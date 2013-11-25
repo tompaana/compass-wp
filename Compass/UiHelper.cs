@@ -5,6 +5,7 @@
 using System;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Shapes;
 
 namespace Compass
 {
@@ -38,7 +39,7 @@ namespace Compass
 
         /// <returns>A solid color brush instance with color matching the theme
         /// background.</returns>
-        public static SolidColorBrush ThemeBackgroundBrush()
+        public static SolidColorBrush GetThemeBackgroundBrush()
         {
             if (_instance._brush == null)
             {
@@ -63,6 +64,24 @@ namespace Compass
             }
 
             return _instance._brush;
+        }
+
+        /// <summary>
+        /// Creates a circle with the given radius filled with the given color.
+        /// </summary>
+        /// <param name="radius">The radius of the circle.</param>
+        /// <param name="a">Color alpha level.</param>
+        /// <param name="r">Red.</param>
+        /// <param name="g">Green.</param>
+        /// <param name="b">Blue.</param>
+        /// <returns>The created circle as an ellipse object.</returns>
+        public static Ellipse CreateFilledCircle(double radius, byte a, byte r, byte g, byte b)
+        {
+            Ellipse ellipse = new Ellipse();
+            ellipse.Width = radius * 2;
+            ellipse.Height = radius * 2;
+            ellipse.Fill = new SolidColorBrush(System.Windows.Media.Color.FromArgb(a, r, g, b));
+            return ellipse;
         }
 
         /// <summary>

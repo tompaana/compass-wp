@@ -145,6 +145,7 @@
     <Content Include="Assets\Graphics\compass_plate.png" />
     <Content Include="Assets\Graphics\fullscreen_icon.png" />
     <Content Include="Assets\Graphics\location_marker.png" />
+    <Content Include="Assets\Graphics\location_marker_gray.png" />
     <Content Include="Assets\Graphics\map_icon.png" />
     <Content Include="Assets\Graphics\map_marker.png" />
     <Content Include="Assets\Graphics\scale.png" />
