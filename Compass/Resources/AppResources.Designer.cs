@@ -97,6 +97,24 @@ namespace Compass.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Rotate the phone to calibrate the compass sensor. You can do this later, but note that when not calibrated, the compass needle may not show the accurate heading..
+        /// </summary>
+        public static string CalibrationViewInfo {
+            get {
+                return ResourceManager.GetString("CalibrationViewInfo", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Compass needs to be calibrated.
+        /// </summary>
+        public static string CalibrationViewTitle {
+            get {
+                return ResourceManager.GetString("CalibrationViewTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to My location.
         /// </summary>
         public static string CenterToLocationButtonText {
@@ -183,6 +201,15 @@ namespace Compass.Resources {
         public static string ResourceLanguage {
             get {
                 return ResourceManager.GetString("ResourceLanguage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to skip.
+        /// </summary>
+        public static string Skip {
+            get {
+                return ResourceManager.GetString("Skip", resourceCulture);
             }
         }
         

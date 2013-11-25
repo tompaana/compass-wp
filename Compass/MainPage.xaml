@@ -27,11 +27,13 @@
                   ZoomLevel="5"
                   ZoomLevelChanged="OnMapZoomLevelChanged" />
 
-        <TextBlock x:Name="DebugTextBlock"
-                   Margin="10,0,-10,650"
-                   Text="DEBUG BOX"
-                   Foreground="#000000"
-                   />
+        <TextBlock
+            x:Name="DebugTextBlock"
+            Margin="10,-10,-10,640"
+            Text="This is a debug text block"
+            Foreground="#000000"
+            Visibility="Collapsed"
+            />
 
         <!-- Compass control is the visible compass item -->
         <src:CompassControl

@@ -161,10 +161,19 @@
   <data name="LocationUsageQueryTitle" xml:space="preserve">
     <value>Use of location</value>
   </data>
+  <data name="CalibrationViewInfo" xml:space="preserve">
+    <value>Rotate the phone to calibrate the compass sensor. You can do this later, but note that when not calibrated, the compass needle may not show the accurate heading.</value>
+  </data>
+  <data name="CalibrationViewTitle" xml:space="preserve">
+    <value>Compass needs to be calibrated</value>
+  </data>
   <data name="FailedToStartCompassMessage" xml:space="preserve">
     <value>Failed to start compass. Please try restarting the application.</value>
   </data>
   <data name="NoCompassMessage" xml:space="preserve">
     <value>Your device does not have compass supported. The application will still run, but the compass needle will not show the correct heading.</value>
+  </data>
+  <data name="Skip" xml:space="preserve">
+    <value>skip</value>
   </data>
 </root>

@@ -2,10 +2,13 @@
  * Copyright (c) 2012-2013 Nokia Corporation.
  */
 
+using Microsoft.Devices;
 using Microsoft.Devices.Sensors;
 using Microsoft.Phone.Controls;
 using Microsoft.Phone.Maps.Controls;
 using Microsoft.Phone.Shell;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Audio;
 using System;
 using System.Collections.Generic;
 using System.Device.Location;
@@ -19,10 +22,12 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
+using System.Windows.Resources;
 using System.Windows.Shapes;
 using Windows.Devices.Geolocation;
 
 using Compass.Resources;
+
 
 namespace Compass
 {
@@ -33,22 +38,33 @@ namespace Compass
     {
         // Constants
         private const String DebugTag = "MainPage.";
-        private const String ToggleFullscreenModeIconUri = "/Assets/Graphics/fullscreen_icon.png";
-        private const String CenterToLocationIconUri = "/Assets/Graphics/center_icon.png";
-        private const String ToggleMapModeIconUri = "/Assets/Graphics/map_icon.png";
-        private const String LocationMarkerImageUri = "/Assets/Graphics/location_marker.png";
+        private const String CalibrationHintImageUri = "Assets/Graphics/calibration_hint.png";
+        private const String CalibrationHintImageDarkUri = "Assets/Graphics/calibration_hint_dark.png";
+        private const String ToggleFullscreenModeIconUri = "Assets/Graphics/fullscreen_icon.png";
+        private const String CenterToLocationIconUri = "Assets/Graphics/center_icon.png";
+        private const String ToggleMapModeIconUri = "Assets/Graphics/map_icon.png";
+        private const String LocationMarkerImageUri = "Assets/Graphics/location_marker.png";
+        private const String CalibrationSoundEffectUri = "Assets/Sounds/calibration.wav";
+        private const double CalibrationViewHorizontalMargin = 30;
+        private const double CalibrationViewVerticalMargin = 50;
+        private const double LocationMarkerImageSize = 40;
         private const int CompassUpdateInterval = 40; // Milliseconds (must be multiple of 20)
+        private const int CompassAccuracyThreshold = 10; // Degrees
         private const int CompassDraggingSpeed = 2;
         private const int DefaultMapZoomLevel = 17;
         private const int LocationUpdateInterval = 10; // Seconds
+        private const int CalibrationTimerInterval = 1; // Seconds
+        private const int CalibrationVibraDuration = 30; // Milliseconds
 
         // Members
         private Microsoft.Devices.Sensors.Compass _compass = null;
         private AppUtils _appUtils = null;
         private GeoCoordinate _coordinate = null;
         private MapLayer _mapLayer = null;
-        private Image _hereMarkerImage = null;
-        private Timer _timer = null;
+        private Image _locationMarkerImage = null;
+        private SoundEffectInstance _calibrationSoundEffect = null;
+        private Timer _locationTimer = null;
+        private Timer _calibrationTimer = null;
         private double _locationAccuracy = 0;
         private double _previousX = 0;
         private double _previousY = 0;
@@ -68,11 +84,17 @@ namespace Compass
             _appUtils = AppUtils.GetInstance();
             _appUtils.LoadSettings();
 
-            UiHelper.ConstructCalibrationView(CalibrationView);
+            ConstructCalibrationView();
+
+#if (DEBUG)
+            DebugTextBlock.Visibility = Visibility.Visible;
+#endif
 
             this.Loaded += MainPage_Loaded;
 
         }
+
+        #region Construction helper methods
 
         /// <summary>
         /// Checks whether the compass is supported or not, initialises and
@@ -118,53 +140,79 @@ namespace Compass
         }
 
         /// <summary>
-        /// 
+        /// Creates the calibration view components and defines the view 
+        /// properties.
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void MainPage_Loaded(object sender, RoutedEventArgs e)
+        private void ConstructCalibrationView()
         {
-            if (!_appUtils.LocationAllowed)
+            CalibrationView.Background = UiHelper.ThemeBackgroundBrush();
+            CalibrationView.Background.Opacity = 0.5;
+
+            Thickness margin = new Thickness();
+            margin.Top = CalibrationViewVerticalMargin * 2;
+            margin.Left = CalibrationViewHorizontalMargin;
+            margin.Right = CalibrationViewHorizontalMargin;
+
+            List<FrameworkElement> elements = new List<FrameworkElement>();
+
+            TextBlock textBlock = new TextBlock();
+            textBlock.HorizontalAlignment = HorizontalAlignment.Center;
+            textBlock.Margin = margin;
+            textBlock.FontSize = (double)Application.Current.Resources["PhoneFontSizeMediumLarge"];
+            textBlock.FontWeight = FontWeights.ExtraBold;
+            textBlock.Text = AppResources.CalibrationViewTitle;
+            elements.Add(textBlock);
+
+            margin = new Thickness();
+            margin.Left = CalibrationViewHorizontalMargin;
+            margin.Right = CalibrationViewHorizontalMargin;
+
+            textBlock = new TextBlock();
+            textBlock.Margin = margin;
+            textBlock.TextWrapping = TextWrapping.Wrap;
+            textBlock.FontSize = (double)Application.Current.Resources["PhoneFontSizeMedium"];
+            textBlock.Text = AppResources.CalibrationViewInfo;
+            elements.Add(textBlock);
+
+            Uri uri = new Uri(UiHelper.PhoneHasDarkTheme ?
+                CalibrationHintImageUri : CalibrationHintImageDarkUri, UriKind.Relative);
+            StreamResourceInfo resourceInfo = Application.GetResourceStream(uri);
+            BitmapImage bmp = new BitmapImage();
+            bmp.SetSource(resourceInfo.Stream);
+            Image image = new Image();
+            image.Source = bmp;
+            image.HorizontalAlignment = HorizontalAlignment.Center;
+            image.VerticalAlignment = VerticalAlignment.Center;
+            image.Margin = margin;
+            elements.Add(image);
+
+            margin = new Thickness();
+            margin.Top = CalibrationViewVerticalMargin;
+
+            textBlock = new TextBlock();
+            textBlock.HorizontalAlignment = HorizontalAlignment.Center;
+            textBlock.Margin = margin;
+            textBlock.FontSize = (double)Application.Current.Resources["PhoneFontSizeMediumLarge"];
+            textBlock.FontWeight = FontWeights.ExtraBold;
+            textBlock.Text = AppResources.Skip;
+            textBlock.ManipulationStarted += OnSkipButtonTapped;
+            elements.Add(textBlock);
+
+            int rowIndex = 0;
+
+            foreach (FrameworkElement element in elements)
             {
-                LocationUsageQueryDialog.LocationUsageAllowed += OnLocationUsageAllowed;
-                LocationUsageQueryDialog.Show();
-            }
-            else
-            {
-                // The use of location was already allowed. Do locate the user
-                // now.
-                _timer = new Timer(GetCurrentLocation, null,
-                    TimeSpan.FromSeconds(0),
-                    TimeSpan.FromSeconds(LocationUpdateInterval));
+                Grid.SetRow(element, rowIndex++);
+                RowDefinition rd = new RowDefinition();
+                CalibrationView.RowDefinitions.Add(rd);
+                CalibrationView.Children.Add(element);                
             }
 
-            BuildLocalizedApplicationBar();
-        }
-
-        /// <summary>
-        /// Called when the use of location is allowed. Stores the setting and
-        /// will start retrieving the user's location.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void OnLocationUsageAllowed(object sender, EventArgs e)
-        {
-            LocationUsageQueryDialog.LocationUsageAllowed -= OnLocationUsageAllowed;
-            _appUtils.LocationAllowed = true;
-
-            _timer = new Timer(GetCurrentLocation, null,
-                TimeSpan.FromSeconds(0),
-                TimeSpan.FromSeconds(LocationUpdateInterval));
-        }
-
-        /// <summary>
-        /// Saves the app settings.
-        /// </summary>
-        /// <param name="e"></param>
-        protected override void OnNavigatedFrom(NavigationEventArgs e)
-        {
-            _appUtils.SaveSettings();
-            base.OnNavigatedFrom(e);
+            // Create the sound effect
+            StreamResourceInfo stream =
+                Application.GetResourceStream(new Uri(CalibrationSoundEffectUri, UriKind.Relative));
+            SoundEffect soundeffect = SoundEffect.FromStream(stream.Stream);
+            _calibrationSoundEffect = soundeffect.CreateInstance();
         }
 
         /// <summary>
@@ -200,6 +248,257 @@ namespace Compass
             ApplicationBar.MenuItems.Add(appBarMenuItem);
             appBarMenuItem = new ApplicationBarMenuItem(AppResources.About);
             ApplicationBar.MenuItems.Add(appBarMenuItem);
+        }
+
+        /// <summary>
+        /// Helper method to draw a single marker on top of the map.
+        /// </summary>
+        /// <param name="coordinate">GeoCoordinate of the marker</param>
+        /// <param name="mapLayer">Map layer to add the marker</param>
+        private void CreateMapItems()
+        {
+            if (_mapLayer != null || _coordinate == null)
+            {
+                // Already created or the user has not been located yet!
+                return;
+            }
+
+            // Load the marker image
+            _locationMarkerImage = new Image();
+            BitmapImage bitmapImage = new BitmapImage();
+            bitmapImage.UriSource = new Uri(LocationMarkerImageUri, UriKind.Relative);
+            _locationMarkerImage.Source = bitmapImage;
+            _locationMarkerImage.Width = LocationMarkerImageSize;
+
+            // Add the items to the map
+            _mapLayer = new MapLayer();
+            UpdateMapItems();
+            MyMap.Layers.Add(_mapLayer);
+        }
+
+        #endregion // Construction helper methods
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void MainPage_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (!_appUtils.LocationAllowed)
+            {
+                LocationUsageQueryDialog.LocationUsageAllowed += OnLocationUsageAllowed;
+                LocationUsageQueryDialog.Show();
+            }
+            else
+            {
+                // The use of location was already allowed. Do locate the user
+                // now.
+                _locationTimer = new Timer(GetCurrentLocation, null,
+                    TimeSpan.FromSeconds(0),
+                    TimeSpan.FromSeconds(LocationUpdateInterval));
+            }
+
+            BuildLocalizedApplicationBar();
+
+            // Make sure the compass is calibrated in the beginning. The
+            // calibration view will be hidden right away (the user won't even
+            // notice), if the compass is already providing accurate values.
+            OnCalibrate(null, null);
+        }
+
+        /// <summary>
+        /// Saves the app settings.
+        /// </summary>
+        /// <param name="e"></param>
+        protected override void OnNavigatedFrom(NavigationEventArgs e)
+        {
+            _appUtils.SaveSettings();
+            base.OnNavigatedFrom(e);
+        }
+
+        #region Compass sensor event handling
+
+        /// <summary>
+        /// Hides the application bar and shows the calibration view.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void OnCalibrate(object sender, CalibrationEventArgs e)
+        {
+            Debug.WriteLine(DebugTag + "OnCalibrate(): Accuracy: "
+                + ((_compass == null) ? -1 : _compass.CurrentValue.HeadingAccuracy));
+
+            Dispatcher.BeginInvoke(() =>
+            {
+                try
+                {
+                    ApplicationBar.IsVisible = false;
+                    CalibrationView.Visibility = Visibility.Visible;
+                }
+                catch (Exception)
+                {
+                }
+            });
+
+            if (_calibrationTimer == null)
+            {
+                _calibrationTimer = new Timer(OnCalibrationTimerTimeout, null,
+                    TimeSpan.FromSeconds(0), TimeSpan.FromSeconds(CalibrationTimerInterval));
+            }
+        }
+
+        /// <summary>
+        /// Updates the needle angle of the compass control. This is a call
+        /// back for the compass sensor, and gets called everytime the reading
+        /// value is changed. The interval is defined by CompassUpdateInterval
+        /// constant.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e">An object containing the compass readings.</param>
+        private void OnCompassReadingChanged(object sender, SensorReadingEventArgs<CompassReading> e)
+        {
+            Dispatcher.BeginInvoke(() =>
+            {
+                if (CalibrationView.Visibility == Visibility.Visible
+                    && e.SensorReading.HeadingAccuracy <= CompassAccuracyThreshold)
+                {
+                    // Acceptable accuracy reached
+                    OnCalibrated();
+                }
+
+                CompassControl.CompassReading = e.SensorReading.TrueHeading;
+            });
+
+#if (DEBUG)
+            Dispatcher.BeginInvoke(()
+                => DebugTextBlock.Text =
+                    "\nTrue: " + e.SensorReading.TrueHeading
+                    + "\nMagnetic: " + e.SensorReading.MagneticHeading
+                    + "\nV3: [" + e.SensorReading.MagnetometerReading.X + ", "
+                    + e.SensorReading.MagnetometerReading.Y + ", "
+                    + e.SensorReading.MagnetometerReading.Z + "]"
+                    + "\nAccuracy: " + e.SensorReading.HeadingAccuracy
+            );
+#endif
+        }
+
+        /// <summary>
+        /// Stops the calibration timer, shows the application bar and hides
+        /// the calibration view.
+        /// </summary>
+        private void OnCalibrated()
+        {
+            if (_calibrationTimer != null)
+            {
+                _calibrationTimer.Dispose();
+                _calibrationTimer = null;
+            }
+
+            Dispatcher.BeginInvoke(() =>
+            {
+                ApplicationBar.IsVisible = true;
+                CalibrationView.Visibility = Visibility.Collapsed;
+            });
+        }
+
+        #endregion // Compass sensor event handling
+
+        #region Touch event handling
+
+        protected override void OnManipulationStarted(ManipulationStartedEventArgs e)
+        {
+            double x = e.ManipulationOrigin.X;
+            double y = e.ManipulationOrigin.Y;
+
+            Compass.Ui.CompassControl.CompassControlArea area =
+                CompassControl.ManipulatedArea;
+            Debug.WriteLine(DebugTag + "OnManipulationStarted(): Area at ["
+                + x + ", " + y + "] == " + area);
+
+            if (area == Compass.Ui.CompassControl.CompassControlArea.PlateCenter
+                || area == Compass.Ui.CompassControl.CompassControlArea.PlateBottom)
+            {
+                // The touched area is on the compass
+
+                // This page has to manage the manipulation of the compass
+                // position because even when the compass has been rotated, the
+                // manipulation coordinates are not.
+                e.ManipulationContainer = this;
+
+                Thickness margin = CompassControl.Margin;
+                _startCompassX = margin.Left;
+                _startCompassY = margin.Top;
+
+                _previousX = -1;
+                _previousY = -1;
+
+                _compassBeingMoved = true;
+                e.Handled = true;
+            }
+            else
+            {
+                base.OnManipulationStarted(e);
+            }
+        }
+
+        protected override void OnManipulationCompleted(ManipulationCompletedEventArgs e)
+        {
+            _compassBeingMoved = false;
+            e.Handled = true;
+        }
+
+        protected override void OnManipulationDelta(ManipulationDeltaEventArgs e)
+        {
+            if (_compassBeingMoved)
+            {
+                double x = e.ManipulationOrigin.X;
+                double y = e.ManipulationOrigin.Y;
+
+                double diffX = 0;
+                double diffY = 0;
+
+                if (_previousX == -1 && _previousY == -1)
+                {
+                    ManipulationDelta delta = e.DeltaManipulation;
+                    _previousX = x - delta.Scale.X;
+                    _previousY = y - delta.Scale.Y;
+                }
+
+                diffX = (_previousX - x) * CompassDraggingSpeed;
+                diffY = (_previousY - y) * CompassDraggingSpeed;
+                _previousX = x;
+                _previousY = y;
+
+                Thickness margin = CompassControl.Margin;
+                margin.Top -= diffY;
+                margin.Left -= diffX;
+                CompassControl.Margin = margin;
+
+                e.Handled = true;
+            }
+            else
+            {
+                base.OnManipulationDelta(e);
+            }
+        }
+
+        #endregion // Touch event handling
+
+        /// <summary>
+        /// Called when the use of location is allowed. Stores the setting and
+        /// will start retrieving the user's location.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void OnLocationUsageAllowed(object sender, EventArgs e)
+        {
+            LocationUsageQueryDialog.LocationUsageAllowed -= OnLocationUsageAllowed;
+            _appUtils.LocationAllowed = true;
+
+            _locationTimer = new Timer(GetCurrentLocation, null,
+                TimeSpan.FromSeconds(0),
+                TimeSpan.FromSeconds(LocationUpdateInterval));
         }
 
         /// <summary>
@@ -244,31 +543,6 @@ namespace Compass
         }
 
         /// <summary>
-        /// Helper method to draw a single marker on top of the map.
-        /// </summary>
-        /// <param name="coordinate">GeoCoordinate of the marker</param>
-        /// <param name="mapLayer">Map layer to add the marker</param>
-        private void CreateMapItems()
-        {
-            if (_mapLayer != null || _coordinate == null)
-            {
-                // Already created or the user has not been located yet!
-                return;
-            }
-
-            // Load the marker image
-            _hereMarkerImage = new Image();
-            BitmapImage bitmapImage = new BitmapImage();
-            bitmapImage.UriSource = new Uri(LocationMarkerImageUri, UriKind.Relative);
-            _hereMarkerImage.Source = bitmapImage;
-
-            // Add the items to the map
-            _mapLayer = new MapLayer();
-            UpdateMapItems();
-            MyMap.Layers.Add(_mapLayer);
-        }
-
-        /// <summary>
         /// 
         /// </summary>
         private void UpdateMapItems()
@@ -285,148 +559,20 @@ namespace Compass
             Ellipse ellipse = new Ellipse();
             ellipse.Width = radius * 2;
             ellipse.Height = radius * 2;
-            ellipse.Fill = new SolidColorBrush(Color.FromArgb(75, 200, 0, 0));
+            ellipse.Fill = new SolidColorBrush(System.Windows.Media.Color.FromArgb(75, 200, 0, 0));
 
             MapOverlay overlay = new MapOverlay();
             overlay.Content = ellipse;
             overlay.GeoCoordinate = new GeoCoordinate(_coordinate.Latitude, _coordinate.Longitude);
-            overlay.PositionOrigin = new Point(0.5, 0.5);
+            overlay.PositionOrigin = new System.Windows.Point(0.5, 0.5);
             _mapLayer.Add(overlay);
 
             // Create a MapOverLay with the marker image and add it to the map layer
             overlay = new MapOverlay();
-            overlay.Content = _hereMarkerImage;
+            overlay.Content = _locationMarkerImage;
             overlay.GeoCoordinate = new GeoCoordinate(_coordinate.Latitude, _coordinate.Longitude);
-            overlay.PositionOrigin = new Point(0.5, 0.5);
+            overlay.PositionOrigin = new System.Windows.Point(0.5, 0.5);
             _mapLayer.Add(overlay);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="e"></param>
-        protected override void OnManipulationStarted(ManipulationStartedEventArgs e)
-        {
-            double x = e.ManipulationOrigin.X;
-            double y = e.ManipulationOrigin.Y;
-
-            Compass.Ui.CompassControl.CompassControlArea area =
-                CompassControl.ManipulatedArea;
-            Debug.WriteLine(DebugTag + "OnManipulationStarted(): Area at ["
-                + x + ", " + y + "] == " + area);
-
-            if (area == Compass.Ui.CompassControl.CompassControlArea.PlateCenter
-                || area == Compass.Ui.CompassControl.CompassControlArea.PlateBottom)
-            {
-                // The touched area is on the compass
-
-                // This page has to manage the manipulation of the compass
-                // position because even when the compass has been rotated, the
-                // manipulation coordinates are not.
-                e.ManipulationContainer = this;                
-
-                Thickness margin = CompassControl.Margin;
-                _startCompassX = margin.Left;
-                _startCompassY = margin.Top;
-
-                _previousX = -1;
-                _previousY = -1;
-
-                _compassBeingMoved = true;
-                e.Handled = true;
-            }
-            else
-            {
-                base.OnManipulationStarted(e);
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="e"></param>
-        protected override void OnManipulationCompleted(ManipulationCompletedEventArgs e)
-        {
-            _compassBeingMoved = false;
-            e.Handled = true;
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="e"></param>
-        protected override void OnManipulationDelta(ManipulationDeltaEventArgs e)
-        {
-            if (_compassBeingMoved)
-            {
-                double x = e.ManipulationOrigin.X;
-                double y = e.ManipulationOrigin.Y;
-
-                double diffX = 0;
-                double diffY = 0;
-
-                if (_previousX == -1 && _previousY == -1)
-                {
-                    ManipulationDelta delta = e.DeltaManipulation;
-                    _previousX = x - delta.Scale.X;
-                    _previousY = y - delta.Scale.Y;
-                }
-
-                diffX = (_previousX - x) * CompassDraggingSpeed;
-                diffY = (_previousY - y) * CompassDraggingSpeed;
-                _previousX = x;
-                _previousY = y;
-                
-                Thickness margin = CompassControl.Margin;
-                margin.Top -= diffY;
-                margin.Left -= diffX;                
-                CompassControl.Margin = margin;
-
-                e.Handled = true;
-            }
-            else
-            {
-                base.OnManipulationDelta(e);
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void OnCalibrate(object sender, CalibrationEventArgs e)
-        {
-            Debug.WriteLine(DebugTag + ".OnCalibrate(): " + e.ToString());
-            Debug.WriteLine(DebugTag + ".OnCalibrate(): Accuracy: " + _compass.CurrentValue.HeadingAccuracy);
-
-            /*Dispatcher.BeginInvoke(()
-                => CalibrationView.Visibility = (CalibrationView.Visibility == Visibility.Visible) ? Visibility.Collapsed : Visibility.Visible
-                );*/
-        }
-
-        /// <summary>
-        /// Updates the needle angle of the compass control. This is a call
-        /// back for the compass sensor, and gets called everytime the reading
-        /// value is changed. The interval is defined by CompassUpdateInterval
-        /// constant.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e">An object containing the compass readings.</param>
-        private void OnCompassReadingChanged(object sender, SensorReadingEventArgs<CompassReading> e)
-        {
-            Dispatcher.BeginInvoke(()
-                => CompassControl.CompassReading = e.SensorReading.TrueHeading);
-
-            Dispatcher.BeginInvoke(()
-                => DebugTextBlock.Text =
-                    "\nTrue: " + e.SensorReading.TrueHeading
-                    + "\nMagnetic: " + e.SensorReading.MagneticHeading
-                    /*+ "\nV3: [" + e.SensorReading.MagnetometerReading.X + ", "
-                    + e.SensorReading.MagnetometerReading.Y + ", "
-                    + e.SensorReading.MagnetometerReading.Z + "]"*/
-                    + "\nAccuracy: " + e.SensorReading.HeadingAccuracy
-            );
         }
 
         /// <summary>
@@ -437,6 +583,35 @@ namespace Compass
         private void OnMapZoomLevelChanged(object sender, EventArgs e)
         {
             _zoomLevel = MyMap.ZoomLevel;
+        }
+
+        /// <summary>
+        /// Provides physical and audible feedback when calibration the compass
+        /// sensor.
+        /// </summary>
+        /// <param name="state"></param>
+        private void OnCalibrationTimerTimeout(object state)
+        {
+            VibrateController vibrateController = VibrateController.Default;
+            vibrateController.Start(TimeSpan.FromMilliseconds(CalibrationVibraDuration));
+
+            if (_calibrationSoundEffect != null)
+            {
+                FrameworkDispatcher.Update();
+                _calibrationSoundEffect.Play();
+            }
+        }
+
+        #region Button tap handlers
+
+        /// <summary>
+        /// Hides the calibration view and shows the application bar.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void OnSkipButtonTapped(object sender, ManipulationStartedEventArgs e)
+        {
+            OnCalibrated();
         }
 
         /// <summary>
@@ -464,7 +639,7 @@ namespace Compass
         }
 
         /// <summary>
-        /// 
+        /// Centers the map to the latest user location.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -484,7 +659,7 @@ namespace Compass
         }
 
         /// <summary>
-        /// 
+        /// Toggles the map modes.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -510,5 +685,7 @@ namespace Compass
                     break;
             }
         }
+
+        #endregion // Button tap handlers
     }
 }

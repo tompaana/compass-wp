@@ -150,6 +150,9 @@
     <Content Include="Assets\Graphics\scale.png" />
     <Content Include="Assets\Graphics\scale_100.png" />
     <Content Include="Assets\Graphics\scale_shadow.png" />
+    <Content Include="Assets\Sounds\calibration.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Assets\Tiles\CompassIcon100NoBg.png" />
     <Content Include="Assets\Tiles\CompassIcon159.png" />
     <Content Include="Assets\Tiles\CompassIcon336.png" />
