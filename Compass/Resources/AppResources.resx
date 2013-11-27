@@ -126,7 +126,7 @@
     <comment>Controls the Language and ensures that the font for all elements in the RootFrame aligns with the app's language. Set to the language code of this resource file's language.</comment>
   </data>
   <data name="ApplicationTitle" xml:space="preserve">
-    <value>MY APPLICATION</value>
+    <value>COMPASS</value>
   </data>
   <data name="AppBarButtonText" xml:space="preserve">
     <value>add</value>
@@ -175,5 +175,20 @@
   </data>
   <data name="Skip" xml:space="preserve">
     <value>skip</value>
+  </data>
+  <data name="HeadingAccuracyTitle" xml:space="preserve">
+    <value>Compass heading accuracy</value>
+  </data>
+  <data name="LocationToggleSwitchHeader" xml:space="preserve">
+    <value>Use location</value>
+  </data>
+  <data name="LocationUsageInfo" xml:space="preserve">
+    <value>The application will show your location on the map. The location data is not sent to any other party.</value>
+  </data>
+  <data name="Settings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="SettingsTitle" xml:space="preserve">
+    <value>settings</value>
   </data>
 </root>

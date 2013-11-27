@@ -185,6 +185,8 @@ namespace Compass.Ui
             {
                 _rootFrame.BackKeyPress -= LocationUsageQueryDialog_BackKeyPress;
             }
+
+            Visibility = Visibility.Collapsed;
         }
     }
 }

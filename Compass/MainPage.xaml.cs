@@ -55,17 +55,17 @@ namespace Compass
         private const double CalibrationViewVerticalMargin = 50;
         private const double LocationMarkerImageSize = 40;
         private const int CompassUpdateInterval = 40; // Milliseconds (must be multiple of 20)
-        private const int CompassAccuracyThreshold = 10; // Degrees
         private const int CompassDraggingSpeed = 2;
         private const int DefaultMapZoomLevel = 17;
         private const int LocationUpdateInterval = 10; // Seconds
+        private const int ShowCalibrationViewDelay = 3; // Seconds
         private const int CalibrationTimerInterval = 1; // Seconds
         private const int CalibrationVibraDuration = 30; // Milliseconds
         private const int CalibrationSuccessfulVibraDuration = 1000; // Milliseconds
 
         // Members
         private Microsoft.Devices.Sensors.Compass _compass = null;
-        private AppUtils _appUtils = null;
+        private AppSettings _appSettings = null;
         private GeoCoordinate _coordinate = null;
         private MapLayer _mapLayer = null;
         private MapOverlay _locationMarkerOverlay = null;
@@ -84,6 +84,7 @@ namespace Compass
         private double _previousCompassX = 0;
         private double _previousCompassY = 0;
         private double _zoomLevel = DefaultMapZoomLevel;
+        private bool _wasLaunched = false;
         private bool _compassBeingMoved = false;
         private bool _inFullscreenMode = false;
         private bool _locationFound = false;
@@ -155,10 +156,10 @@ namespace Compass
         /// </summary>
         private void RestoreSettings()
         {
-            _appUtils = AppUtils.GetInstance();
-            _appUtils.LoadSettings();
-            _coordinate = _appUtils.LastKnownLocation;
-            MyMap.CartographicMode = _appUtils.MapMode;
+            _appSettings = AppSettings.GetInstance();
+            _appSettings.LoadSettings();
+            _coordinate = _appSettings.LastKnownLocation;
+            MyMap.CartographicMode = _appSettings.MapMode;
         }
 
         /// <summary>
@@ -278,9 +279,14 @@ namespace Compass
             ApplicationBar.Buttons.Add(appBarToggleMapModeButton);
 
             // Create menu items with the localized string from AppResources
-            ApplicationBarMenuItem appBarMenuItem = new ApplicationBarMenuItem(AppResources.Instructions);
+            ApplicationBarMenuItem appBarMenuItem = new ApplicationBarMenuItem(AppResources.Settings);
+            appBarMenuItem.Click += OnSettingsClicked;
+            ApplicationBar.MenuItems.Add(appBarMenuItem);
+            appBarMenuItem = new ApplicationBarMenuItem(AppResources.Instructions);
+            appBarMenuItem.Click += OnInstructionsClicked;
             ApplicationBar.MenuItems.Add(appBarMenuItem);
             appBarMenuItem = new ApplicationBarMenuItem(AppResources.About);
+            appBarMenuItem.Click += OnAboutClicked;
             ApplicationBar.MenuItems.Add(appBarMenuItem);
         }
 
@@ -353,26 +359,41 @@ namespace Compass
         /// <param name="e"></param>
         private void MainPage_Loaded(object sender, RoutedEventArgs e)
         {
-            if (!_appUtils.LocationAllowed)
+            Debug.WriteLine(DebugTag + "MainPage_Loaded()");
+
+            if (_wasLaunched && !_appSettings.LocationAllowed)
             {
                 LocationUsageQueryDialog.LocationUsageAllowed += OnLocationUsageAllowed;
                 LocationUsageQueryDialog.Show();
             }
-            else
+
+            BuildLocalizedApplicationBar();
+        }
+
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            Debug.WriteLine(DebugTag + "OnNavigatedTo(): " + e.IsNavigationInitiator);
+
+            _wasLaunched = !e.IsNavigationInitiator;
+
+            if (_appSettings.LocationAllowed)
             {
-                // The use of location was already allowed. Do locate the user
-                // now.
                 _locationTimer = new Timer(GetCurrentLocation, null,
                     TimeSpan.FromSeconds(0),
                     TimeSpan.FromSeconds(LocationUpdateInterval));
             }
+            else
+            {
+            }
 
-            BuildLocalizedApplicationBar();
+            if (_appSettings.HeadingAccuracy == AppSettings.CalibrationRequested)
+            {
+                _calibrationTimer = new Timer(OnCalibrationTimerTimeout, null,
+                    TimeSpan.FromSeconds(CalibrationTimerInterval),
+                    TimeSpan.FromSeconds(CalibrationTimerInterval));
+            }
 
-            // Make sure the compass is calibrated in the beginning. The
-            // calibration view will be hidden right away (the user won't even
-            // notice), if the compass is already providing accurate values.
-            OnCalibrate(null, null);
+            base.OnNavigatedTo(e);
         }
 
         /// <summary>
@@ -381,7 +402,19 @@ namespace Compass
         /// <param name="e"></param>
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
-            _appUtils.SaveSettings();
+            if (_locationTimer != null)
+            {
+                _locationTimer.Dispose();
+                _locationTimer = null;
+            }
+
+            if (_calibrationTimer != null)
+            {
+                _calibrationTimer.Dispose();
+                _calibrationTimer = null;
+            }
+
+            _appSettings.SaveSettings();
             base.OnNavigatedFrom(e);
         }
 
@@ -395,24 +428,13 @@ namespace Compass
         private void OnCalibrate(object sender, CalibrationEventArgs e)
         {
             Debug.WriteLine(DebugTag + "OnCalibrate(): Accuracy: "
-                + ((_compass == null) ? -1 : _compass.CurrentValue.HeadingAccuracy));
-
-            Dispatcher.BeginInvoke(() =>
-            {
-                try
-                {
-                    ApplicationBar.IsVisible = false;
-                    CalibrationView.Visibility = Visibility.Visible;
-                }
-                catch (Exception)
-                {
-                }
-            });
+                + ((_compass == null) ? "n/a" : _compass.CurrentValue.HeadingAccuracy.ToString()));
 
             if (_calibrationTimer == null)
             {
                 _calibrationTimer = new Timer(OnCalibrationTimerTimeout, null,
-                    TimeSpan.FromSeconds(0), TimeSpan.FromSeconds(CalibrationTimerInterval));
+                    TimeSpan.FromSeconds(ShowCalibrationViewDelay),
+                    TimeSpan.FromSeconds(CalibrationTimerInterval));
             }
         }
 
@@ -429,7 +451,7 @@ namespace Compass
             Dispatcher.BeginInvoke(() =>
             {
                 if (CalibrationView.Visibility == Visibility.Visible
-                    && e.SensorReading.HeadingAccuracy <= CompassAccuracyThreshold)
+                    && e.SensorReading.HeadingAccuracy <= AppSettings.HeadingAccuracyThreshold)
                 {
                     // Acceptable accuracy reached
                     OnCalibrated();
@@ -607,7 +629,7 @@ namespace Compass
                     }
 
                     // Store this location
-                    AppUtils.GetInstance().LastKnownLocation = _coordinate;
+                    AppSettings.GetInstance().LastKnownLocation = _coordinate;
                 });
             }
             catch (Exception)
@@ -668,7 +690,7 @@ namespace Compass
         private void OnLocationUsageAllowed(object sender, EventArgs e)
         {
             LocationUsageQueryDialog.LocationUsageAllowed -= OnLocationUsageAllowed;
-            _appUtils.LocationAllowed = true;
+            _appSettings.LocationAllowed = true;
 
             _locationTimer = new Timer(GetCurrentLocation, null,
                 TimeSpan.FromSeconds(0),
@@ -682,14 +704,44 @@ namespace Compass
         /// <param name="state"></param>
         private void OnCalibrationTimerTimeout(object state)
         {
-            VibrateController vibrateController = VibrateController.Default;
-            vibrateController.Start(TimeSpan.FromMilliseconds(CalibrationVibraDuration));
+            Debug.WriteLine(DebugTag + "OnCalibrationTimerTimeout()");
 
-            if (_calibrationSoundEffect1 != null)
+            Dispatcher.BeginInvoke(() =>
             {
-                FrameworkDispatcher.Update();
-                _calibrationSoundEffect1.Play();
-            }
+                if (CalibrationView.Visibility == Visibility.Collapsed)
+                {
+                    if (LocationUsageQueryDialog.Visibility == Visibility.Visible)
+                    {
+                        // Wait until the dialog is hidden
+                        Debug.WriteLine(DebugTag + "OnCalibrationTimerTimeout(): Waiting for dialog to be hidden");
+                        return;
+                    }
+
+                    // Show the calibration view
+                    if (ApplicationBar != null)
+                    {
+                        ApplicationBar.IsVisible = false;
+                    }
+
+                    CalibrationView.Visibility = Visibility.Visible;
+
+                    _calibrationTimer.Dispose();
+                    _calibrationTimer = new Timer(OnCalibrationTimerTimeout, null,
+                        TimeSpan.FromSeconds(0), TimeSpan.FromSeconds(CalibrationTimerInterval));
+
+                    if (_calibrationSoundEffect1 != null)
+                    {
+                        FrameworkDispatcher.Update();
+                        _calibrationSoundEffect1.Play();
+                    }
+                }
+                else
+                {
+                    // Play vibra
+                    VibrateController vibrateController = VibrateController.Default;
+                    vibrateController.Start(TimeSpan.FromMilliseconds(CalibrationVibraDuration));
+                }
+            });
         }
 
         #region Button tap handlers
@@ -757,7 +809,7 @@ namespace Compass
         {
             if (_coordinate == null)
             {
-                if (_appUtils.LocationAllowed)
+                if (_appSettings.LocationAllowed)
                 {
                     GetCurrentLocation(null);
                 }
@@ -775,25 +827,46 @@ namespace Compass
         /// <param name="e"></param>
         private void ToggleMapMode_Click(object sender, EventArgs e)
         {
-            switch (_appUtils.MapMode)
+            switch (_appSettings.MapMode)
             {
                 case MapCartographicMode.Road:
-                    _appUtils.MapMode = MapCartographicMode.Aerial;
-                    MyMap.CartographicMode = _appUtils.MapMode;
+                    _appSettings.MapMode = MapCartographicMode.Aerial;
+                    MyMap.CartographicMode = _appSettings.MapMode;
                     break;
                 case MapCartographicMode.Aerial:
-                    _appUtils.MapMode = MapCartographicMode.Hybrid;
-                    MyMap.CartographicMode = _appUtils.MapMode;
+                    _appSettings.MapMode = MapCartographicMode.Hybrid;
+                    MyMap.CartographicMode = _appSettings.MapMode;
                     break;
                 case MapCartographicMode.Hybrid:
-                    _appUtils.MapMode = MapCartographicMode.Terrain;
-                    MyMap.CartographicMode = _appUtils.MapMode;
+                    _appSettings.MapMode = MapCartographicMode.Terrain;
+                    MyMap.CartographicMode = _appSettings.MapMode;
                     break;
                 default:
-                    _appUtils.MapMode = MapCartographicMode.Road;
-                    MyMap.CartographicMode = _appUtils.MapMode;
+                    _appSettings.MapMode = MapCartographicMode.Road;
+                    MyMap.CartographicMode = _appSettings.MapMode;
                     break;
             }
+        }
+
+        void OnSettingsClicked(object sender, EventArgs e)
+        {
+            double defaultAccuracyValueInCaseNoCompass = 0;
+#if (DEBUG)
+            defaultAccuracyValueInCaseNoCompass = 42;
+#endif
+            _appSettings.HeadingAccuracy = (_compass != null) ?
+                _compass.CurrentValue.HeadingAccuracy : defaultAccuracyValueInCaseNoCompass;
+            NavigationService.Navigate(new Uri("/SettingsPage.xaml", UriKind.Relative));
+        }
+
+        void OnInstructionsClicked(object sender, EventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+
+        void OnAboutClicked(object sender, EventArgs e)
+        {
+            throw new NotImplementedException();
         }
 
         #endregion // Button tap handlers

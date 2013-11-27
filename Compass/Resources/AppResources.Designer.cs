@@ -88,7 +88,7 @@ namespace Compass.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to MY APPLICATION.
+        ///   Looks up a localized string similar to COMPASS.
         /// </summary>
         public static string ApplicationTitle {
             get {
@@ -133,6 +133,15 @@ namespace Compass.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Compass heading accuracy.
+        /// </summary>
+        public static string HeadingAccuracyTitle {
+            get {
+                return ResourceManager.GetString("HeadingAccuracyTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Instructions.
         /// </summary>
         public static string Instructions {
@@ -156,6 +165,24 @@ namespace Compass.Resources {
         public static string LocationCancelButtonText {
             get {
                 return ResourceManager.GetString("LocationCancelButtonText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Use location.
+        /// </summary>
+        public static string LocationToggleSwitchHeader {
+            get {
+                return ResourceManager.GetString("LocationToggleSwitchHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The application will show your location on the map. The location data is not sent to any other party..
+        /// </summary>
+        public static string LocationUsageInfo {
+            get {
+                return ResourceManager.GetString("LocationUsageInfo", resourceCulture);
             }
         }
         
@@ -201,6 +228,24 @@ namespace Compass.Resources {
         public static string ResourceLanguage {
             get {
                 return ResourceManager.GetString("ResourceLanguage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Settings.
+        /// </summary>
+        public static string Settings {
+            get {
+                return ResourceManager.GetString("Settings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to settings.
+        /// </summary>
+        public static string SettingsTitle {
+            get {
+                return ResourceManager.GetString("SettingsTitle", resourceCulture);
             }
         }
         

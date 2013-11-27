@@ -19,16 +19,18 @@ namespace Compass
     /// general helper methods including ones that offer details of the device
     /// the app is run on.
     /// </summary>
-    class AppUtils
+    class AppSettings
     {
         // Constants
+        public const double CalibrationRequested = -1.0;
+        public const int HeadingAccuracyThreshold = 10; // Degrees
         private const String Tag = "AppUtils.";
         private const String LocationAllowedId = "LocationAllowed";
         private const String LastKnownLocationId = "Location";
         private const String MapModeId = "MapMode";
 
         // Members
-        private static AppUtils _instance = null;
+        private static AppSettings _instance = null;
         private IsolatedStorageSettings _appSettings = IsolatedStorageSettings.ApplicationSettings;
 
         // Properties
@@ -51,15 +53,21 @@ namespace Compass
             set;
         }
 
+        public double HeadingAccuracy
+        {
+            get;
+            set;
+        }
+
         /// <summary>
         /// Returns the singleton instance of this class.
         /// </summary>
         /// <returns>A singleton instance of AppUtils class.</returns>
-        public static AppUtils GetInstance()
+        public static AppSettings GetInstance()
         {
             if (_instance == null)
             {
-                _instance = new AppUtils();
+                _instance = new AppSettings();
             }
 
             return _instance;
@@ -68,7 +76,7 @@ namespace Compass
         /// <summary>
         /// Constructor.
         /// </summary>
-        private AppUtils()
+        private AppSettings()
         {
             LastKnownLocation = null;
             MapMode = MapCartographicMode.Road;
