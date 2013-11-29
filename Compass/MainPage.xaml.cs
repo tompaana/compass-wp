@@ -41,7 +41,7 @@ namespace Compass
 
         // Placeholder for HERE Maps application ID and token
         private const String ApplicationId = "";
-        private const String ApplicationToken = "";
+        private const String AuthenticationToken = "";
 
         private const String CalibrationHintImageUri = "Assets/Graphics/calibration_hint.png";
         private const String CalibrationHintImageDarkUri = "Assets/Graphics/calibration_hint_dark.png";
