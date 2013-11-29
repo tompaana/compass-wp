@@ -95,7 +95,6 @@ namespace Compass
             InitializeComponent();
             InitializeAndStartCompass();
             RestoreSettings();
-            CreateMapItems();
             ConstructCalibrationView();
 
 #if (DEBUG)
@@ -385,18 +384,32 @@ namespace Compass
             if (value != null && value.Equals("true"))
             {
                 // This page was navigated from the splash screen
+                Debug.WriteLine(DebugTag + "OnNavigatedTo(): Was navigated from the splash screen.");
                 NavigationService.RemoveBackEntry(); // Remove the splash screen from the navigation stack
                 _wasLaunched = true;
+                NavigationContext.QueryString.Clear();
             }
 
             if (_appSettings.LocationAllowed)
             {
+                CreateMapItems();
+
                 _locationTimer = new Timer(GetCurrentLocation, null,
                     TimeSpan.FromSeconds(0),
                     TimeSpan.FromSeconds(LocationUpdateInterval));
             }
             else
             {
+                // Remove the map items if they exist
+                MyMap.InvalidateMeasure();
+
+                if (_mapLayer != null)
+                {
+                    _mapLayer.Clear();
+                    _mapLayer = null;
+                }
+
+                _locationFound = false;
             }
 
             if (_appSettings.HeadingAccuracy == AppSettings.CalibrationRequested)
@@ -622,7 +635,7 @@ namespace Compass
                         new GeoCoordinate(currentPosition.Coordinate.Latitude,
                                           currentPosition.Coordinate.Longitude);
 
-                    if (!_locationFound)
+                    if (!_locationFound || _mapLayer == null)
                     {
                         _locationFound = true;
 
@@ -659,6 +672,13 @@ namespace Compass
         /// </summary>
         private void UpdateMapItems()
         {
+            if (_mapLayer == null)
+            {
+                return;
+            }
+
+            MyMap.InvalidateMeasure();
+
             // The ground resolution (in meters per pixel) varies depending on the level of detail
             // and the latitude at which it’s measured. It can be calculated as follows:
             double metersPerPixels =
@@ -673,8 +693,6 @@ namespace Compass
             {
                 overlay.GeoCoordinate = _coordinate;
             }
-
-            MyMap.InvalidateMeasure();
         }
 
         /// <summary>
@@ -865,6 +883,9 @@ namespace Compass
         {
             double defaultAccuracyValueInCaseNoCompass = 0;
 #if (DEBUG)
+            // Set the accuracy value to enable calibration from the settings
+            // view. This way the calibration view can also be tested with the
+            // emulator.
             defaultAccuracyValueInCaseNoCompass = 42;
 #endif
             _appSettings.HeadingAccuracy = (_compass != null) ?
