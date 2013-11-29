@@ -38,6 +38,11 @@ namespace Compass
     {
         // Constants
         private const String DebugTag = "MainPage.";
+
+        // Placeholder for HERE Maps application ID and token
+        private const String ApplicationId = "";
+        private const String ApplicationToken = "";
+
         private const String CalibrationHintImageUri = "Assets/Graphics/calibration_hint.png";
         private const String CalibrationHintImageDarkUri = "Assets/Graphics/calibration_hint_dark.png";
         private const String ToggleFullscreenModeIconUri = "Assets/Graphics/fullscreen_icon.png";
@@ -101,6 +106,7 @@ namespace Compass
             DebugTextBlock.Visibility = Visibility.Visible;
 #endif
 
+            MyMap.Loaded += MyMap_Loaded;
             this.Loaded += MainPage_Loaded;
 
         }
@@ -350,6 +356,17 @@ namespace Compass
         }
 
         #endregion // Construction helper methods
+
+        /// <summary>
+        /// Provides the application ID and token for the maps.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        void MyMap_Loaded(object sender, RoutedEventArgs e)
+        {
+            Microsoft.Phone.Maps.MapsSettings.ApplicationContext.ApplicationId = ApplicationId;
+            Microsoft.Phone.Maps.MapsSettings.ApplicationContext.AuthenticationToken = AuthenticationToken;
+        }
 
         /// <summary>
         /// 
