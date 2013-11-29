@@ -370,11 +370,24 @@ namespace Compass
             BuildLocalizedApplicationBar();
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="e"></param>
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             Debug.WriteLine(DebugTag + "OnNavigatedTo(): " + e.IsNavigationInitiator);
 
             _wasLaunched = !e.IsNavigationInitiator;
+            String value = null;
+            NavigationContext.QueryString.TryGetValue("was_launched", out value);
+
+            if (value != null && value.Equals("true"))
+            {
+                // This page was navigated from the splash screen
+                NavigationService.RemoveBackEntry(); // Remove the splash screen from the navigation stack
+                _wasLaunched = true;
+            }
 
             if (_appSettings.LocationAllowed)
             {
@@ -861,12 +874,12 @@ namespace Compass
 
         void OnInstructionsClicked(object sender, EventArgs e)
         {
-            throw new NotImplementedException();
+            NavigationService.Navigate(new Uri("/InstructionsPage.xaml", UriKind.Relative));
         }
 
         void OnAboutClicked(object sender, EventArgs e)
         {
-            throw new NotImplementedException();
+            NavigationService.Navigate(new Uri("/AboutPage.xaml", UriKind.Relative));
         }
 
         #endregion // Button tap handlers

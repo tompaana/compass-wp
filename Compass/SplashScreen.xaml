@@ -1,0 +1,45 @@
+﻿<!--
+    Copyright (c) 2013 Nokia Corporation.
+-->
+
+<phone:PhoneApplicationPage
+    x:Class="Compass.SplashScreen"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:phone="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone"
+    xmlns:shell="clr-namespace:Microsoft.Phone.Shell;assembly=Microsoft.Phone"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    FontFamily="{StaticResource PhoneFontFamilyNormal}"
+    FontSize="{StaticResource PhoneFontSizeNormal}"
+    Foreground="{StaticResource PhoneForegroundBrush}"
+    SupportedOrientations="Portrait" Orientation="Portrait"
+    mc:Ignorable="d"
+    shell:SystemTray.IsVisible="False">
+
+    <!--LayoutRoot is the root grid where all page content is placed-->
+    <Grid x:Name="LayoutRoot" Background="#0083d6">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Image
+            Margin="-200,350,0,0"
+            Width="800"
+            Source="/Assets/Graphics/splash_screen_image.png"
+            />
+        
+        <!--ContentPanel - place additional content here-->
+        <Grid x:Name="ContentPanel" Grid.Row="0" Margin="12,0,12,0">
+            <TextBlock
+                Margin="20,200,0,0"
+                Foreground="White"
+                FontSize="{StaticResource PhoneFontSizeExtraExtraLarge}"
+                FontWeight="Bold"
+                Text="{Binding Path=LocalizedResources.AppTitleInAbout, Source={StaticResource LocalizedStrings}}"
+                />
+        </Grid>
+    </Grid>
+
+</phone:PhoneApplicationPage>

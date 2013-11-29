@@ -70,6 +70,24 @@ namespace Compass.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to ABOUT.
+        /// </summary>
+        public static string AboutTitle {
+            get {
+                return ResourceManager.GetString("AboutTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to All rights reserved..
+        /// </summary>
+        public static string AllRightsReserved {
+            get {
+                return ResourceManager.GetString("AllRightsReserved", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to add.
         /// </summary>
         public static string AppBarButtonText {
@@ -97,6 +115,15 @@ namespace Compass.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Compass.
+        /// </summary>
+        public static string AppTitleInAbout {
+            get {
+                return ResourceManager.GetString("AppTitleInAbout", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Rotate the phone to calibrate the compass sensor. You can do this later, but note that when not calibrated, the compass needle may not show the accurate heading..
         /// </summary>
         public static string CalibrationViewInfo {
@@ -120,6 +147,15 @@ namespace Compass.Resources {
         public static string CenterToLocationButtonText {
             get {
                 return ResourceManager.GetString("CenterToLocationButtonText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Copyright © 2012–2013 Nokia Corporation..
+        /// </summary>
+        public static string CopyrightText {
+            get {
+                return ResourceManager.GetString("CopyrightText", resourceCulture);
             }
         }
         
@@ -273,6 +309,15 @@ namespace Compass.Resources {
         public static string ToggleMapModeButtonText {
             get {
                 return ResourceManager.GetString("ToggleMapModeButtonText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Version.
+        /// </summary>
+        public static string Version {
+            get {
+                return ResourceManager.GetString("Version", resourceCulture);
             }
         }
     }

@@ -1,0 +1,82 @@
+﻿<phone:PhoneApplicationPage
+    x:Class="Compass.InstructionsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:phone="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone"
+    xmlns:shell="clr-namespace:Microsoft.Phone.Shell;assembly=Microsoft.Phone"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    FontFamily="{StaticResource PhoneFontFamilyNormal}"
+    FontSize="{StaticResource PhoneFontSizeNormal}"
+    Foreground="{StaticResource PhoneForegroundBrush}"
+    SupportedOrientations="Portrait"  Orientation="Portrait"
+    shell:SystemTray.IsVisible="False">
+
+    <!--LayoutRoot contains the root grid where all other page content is placed-->
+    <Grid x:Name="LayoutRoot">
+        <phone:Panorama Title="{Binding Path=LocalizedResources.Instructions, Source={StaticResource LocalizedStrings}}">
+
+            <phone:PanoramaItem Header="1. Adjust plate">
+                <StackPanel>
+                    <Image
+                        Source="/Assets/InstructionsImages/adjusting_compass_plate.png"
+                        />
+                    <TextBlock
+                        Margin="0,12,0,0"
+                        TextWrapping="Wrap">
+                        <Run Text="1. Rotate the compass plate so that the side of the side of the plate intersects both your current location and the destionation (portrayed by the red marker in the picture)." />
+                        <LineBreak />
+                        <LineBreak />
+                        <Run Text="2. Rotate the round scale so that the red red arrow and the lines next to it point to north (top of the screen)." />
+                    </TextBlock>
+                        
+                </StackPanel>
+            </phone:PanoramaItem>
+
+            <phone:PanoramaItem Header="2. Take heading">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Image
+                        Grid.Column="0"
+                        Width="164"
+                        Source="/Assets/InstructionsImages/taking_heading.png"
+                        />
+                    <TextBlock
+                        Grid.Column="1"
+                        Margin="12,0,0,0"
+                        TextWrapping="Wrap">
+                        <Run Text="1. Switch to fullscreen mode by tapping the left-most application bar icon button." />
+                        <LineBreak />
+                        <LineBreak />
+                        <Run Text="2. Hold the phone in front of you the screen facing up, and the big red arrow on the compass plate pointing straight ahead of you." />
+                        <LineBreak />
+                        <LineBreak />
+                        <Run Text="3. While keeping the phone steady, turn yourself until the needle is aligned with the smaller red arrow in the scale. You are now facing the correct direction!" />
+                    </TextBlock>
+                </Grid>
+            </phone:PanoramaItem>
+
+            <phone:PanoramaItem Header="3. Landmarks">
+                <StackPanel>
+                    <TextBlock
+                        TextWrapping="Wrap">
+                        <Run Text="When orienteering, especially with longer distances, one seldom travels directly from point A to point B. Instead, use landmarks along the way to help you navigate. Landmark has to have two qualities: 1) You can see it and keep it in sight and 2) you can place it on the map." />
+                        <LineBreak />
+                        <LineBreak />
+                        <Run Text="When reaching a landmark, select the next one and re-adjust the compass based on these two locations." />
+                    </TextBlock>
+                    <Image
+                        Margin="0,12,0,0"
+                        Source="/Assets/InstructionsImages/using_landmarks.png"
+                        />
+                </StackPanel>
+            </phone:PanoramaItem>
+
+        </phone:Panorama>
+    </Grid>
+
+</phone:PhoneApplicationPage>
