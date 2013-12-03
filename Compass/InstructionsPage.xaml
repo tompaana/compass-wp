@@ -25,10 +25,10 @@
                     <TextBlock
                         Margin="0,12,0,0"
                         TextWrapping="Wrap">
-                        <Run Text="1. Rotate the compass plate so that the side of the side of the plate intersects both your current location and the destionation (portrayed by the red marker in the picture)." />
+                        <Run Text="1. Rotate the compass plate so that the side of the side of the plate intersects both your current location and the destination (portrayed by the red marker in the picture)." />
                         <LineBreak />
                         <LineBreak />
-                        <Run Text="2. Rotate the round scale so that the red red arrow and the lines next to it point to north (top of the screen)." />
+                        <Run Text="2. Rotate the round scale so that the red arrow and the lines next to it point to north (top of the screen)." />
                     </TextBlock>
                         
                 </StackPanel>
