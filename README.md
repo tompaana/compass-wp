@@ -10,6 +10,9 @@ can also be rotated.
 This project is hosted in GitHub:
 https://github.com/nokia-developer/compass-wp
 
+You can also download the app from the Store:
+http://www.windowsphone.com/s?appid=ed617607-f643-4eb5-821b-675494bd3b66
+
 
 License
 -------------------------------------------------------------------------------
