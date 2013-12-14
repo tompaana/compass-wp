@@ -24,10 +24,12 @@ namespace Compass
         // Constants
         public const double CalibrationRequested = -1.0;
         public const int HeadingAccuracyThreshold = 10; // Degrees
-        private const String Tag = "AppUtils.";
-        private const String LocationAllowedId = "LocationAllowed";
-        private const String LastKnownLocationId = "Location";
-        private const String MapModeId = "MapMode";
+        private const string Tag = "AppUtils.";
+        private const string LocationAllowedId = "LocationAllowed";
+        private const string LastKnownLocationId = "Location";
+        private const string MapModeId = "MapMode";
+        private const string AutoNorthId = "AutoNorth";
+        private const string RotateMapId = "RotateMap";
 
         // Members
         private static AppSettings _instance = null;
@@ -54,6 +56,18 @@ namespace Compass
         }
 
         public double HeadingAccuracy
+        {
+            get;
+            set;
+        }
+
+        public bool AutoNorth
+        {
+            get;
+            set;
+        }
+
+        public bool RotateMap
         {
             get;
             set;
@@ -92,10 +106,10 @@ namespace Compass
                 LocationAllowed = (bool)_appSettings[LocationAllowedId];
                 LastKnownLocation = (GeoCoordinate)_appSettings[LastKnownLocationId];
                 MapMode = (MapCartographicMode)_appSettings[MapModeId];
-                Debug.WriteLine(Tag + "LoadSettings(): Loaded: "
-                    + LocationAllowed + ", "
-                    + LastKnownLocation + ", "
-                    + MapMode);
+                AutoNorth = (bool)_appSettings[AutoNorthId];
+                RotateMap = (bool)_appSettings[RotateMapId];
+
+                Debug.WriteLine(Tag + "LoadSettings():\n" + ToString());
             }
             catch (System.Collections.Generic.KeyNotFoundException e)
             {
@@ -113,15 +127,24 @@ namespace Compass
                 _appSettings[LocationAllowedId] = LocationAllowed;
                 _appSettings[LastKnownLocationId] = LastKnownLocation;
                 _appSettings[MapModeId] = MapMode;
-                Debug.WriteLine(Tag + "SaveSettings(): Saved: "
-                    + LocationAllowed + ", "
-                    + LastKnownLocation + ", "
-                    + MapMode);
+                _appSettings[AutoNorthId] = AutoNorth;
+                _appSettings[RotateMapId] = RotateMap;
+
+                Debug.WriteLine(Tag + "SaveSettings():\n" + ToString());
             }
             catch (ArgumentException e)
             {
                 Debug.WriteLine(Tag + "SaveSettings(): " + e.ToString());
             }
+        }
+
+        public override string ToString()
+        {
+            return "- Location allowed: " + LocationAllowed + ", "
+                    + "\n- Last known location: " + LastKnownLocation + ", "
+                    + "\n- Map mode: " + MapMode + ", "
+                    + "\n- Auto north: " + AutoNorth + ", "
+                    + "\n- Rotate map: " + RotateMap;
         }
     }
 }

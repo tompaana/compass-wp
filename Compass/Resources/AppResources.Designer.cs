@@ -124,6 +124,15 @@ namespace Compass.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Toggle auto north.
+        /// </summary>
+        public static string AutoNorthButtonText {
+            get {
+                return ResourceManager.GetString("AutoNorthButtonText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Rotate the phone to calibrate the compass sensor. You can do this later, but note that when not calibrated, the compass needle may not show the accurate heading..
         /// </summary>
         public static string CalibrationViewInfo {
@@ -264,6 +273,15 @@ namespace Compass.Resources {
         public static string ResourceLanguage {
             get {
                 return ResourceManager.GetString("ResourceLanguage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Rotate map based on heading.
+        /// </summary>
+        public static string RotateMapSwitchHeader {
+            get {
+                return ResourceManager.GetString("RotateMapSwitchHeader", resourceCulture);
             }
         }
         

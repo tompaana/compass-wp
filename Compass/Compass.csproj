@@ -99,6 +99,7 @@
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
     <Compile Include="AppSettings.cs" />
+    <Compile Include="DeviceProperties.cs" />
     <Compile Include="InstructionsPage.xaml.cs">
       <DependentUpon>InstructionsPage.xaml</DependentUpon>
     </Compile>
@@ -124,7 +125,6 @@
     <Compile Include="SettingsPage.xaml.cs">
       <DependentUpon>SettingsPage.xaml</DependentUpon>
     </Compile>
-    <Compile Include="UiHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml">
@@ -166,19 +166,28 @@
     <None Include="Properties\WMAppManifest.xml">
       <SubType>Designer</SubType>
     </None>
+    <None Include="RateMyAppGuide.pdf" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Assets\AlignmentGrid.png" />
+    <Content Include="Assets\Graphics\auto_north_icon_off.png" />
+    <Content Include="Assets\Graphics\auto_north_icon_on.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Assets\Graphics\calibration_hint.png" />
     <Content Include="Assets\Graphics\calibration_hint_dark.png" />
     <Content Include="Assets\Graphics\center_icon.png" />
     <Content Include="Assets\Graphics\compass_needle.png" />
     <Content Include="Assets\Graphics\compass_plate.png" />
-    <Content Include="Assets\Graphics\fullscreen_icon.png" />
+    <Content Include="Assets\Graphics\fullscreen_icon_off.png" />
+    <Content Include="Assets\Graphics\fullscreen_icon_on.png" />
     <Content Include="Assets\Graphics\location_marker.png" />
     <Content Include="Assets\Graphics\location_marker_gray.png" />
     <Content Include="Assets\Graphics\map_icon.png" />
     <Content Include="Assets\Graphics\map_marker.png" />
+    <Content Include="Assets\Graphics\map_scale.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Assets\Graphics\scale.png" />
     <Content Include="Assets\Graphics\scale_100.png" />
     <Content Include="Assets\Graphics\scale_shadow.png" />
@@ -211,6 +220,9 @@
     <Reference Include="Microsoft.Phone.Controls.Toolkit, Version=8.0.1.0, Culture=neutral, PublicKeyToken=b772ad94eb9ca604, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\WPtoolkit.4.2013.08.16\lib\wp8\Microsoft.Phone.Controls.Toolkit.dll</HintPath>
+    </Reference>
+    <Reference Include="RateMyApp">
+      <HintPath>..\packages\RateMyApp.1.0.2\lib\sl4-wp71\RateMyApp.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup />

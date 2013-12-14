@@ -206,4 +206,10 @@
   <data name="Version" xml:space="preserve">
     <value>Version</value>
   </data>
+  <data name="AutoNorthButtonText" xml:space="preserve">
+    <value>Toggle auto north</value>
+  </data>
+  <data name="RotateMapSwitchHeader" xml:space="preserve">
+    <value>Rotate map based on heading</value>
+  </data>
 </root>

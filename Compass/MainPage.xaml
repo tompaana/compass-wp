@@ -11,6 +11,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:maps="clr-namespace:Microsoft.Phone.Maps.Controls;assembly=Microsoft.Phone.Maps"
     xmlns:src="clr-namespace:Compass.Ui"
+    xmlns:rma="clr-namespace:RateMyApp.Controls;assembly=RateMyApp"
     mc:Ignorable="d"
     FontFamily="{StaticResource PhoneFontFamilyNormal}"
     FontSize="{StaticResource PhoneFontSizeNormal}"
@@ -27,6 +28,33 @@
                   ZoomLevel="5"
                   ZoomLevelChanged="OnMapZoomLevelChanged" />
 
+        <Grid Margin="-300,580,0,0" Width="150" Height="50">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="15" />
+            </Grid.RowDefinitions>
+            <Rectangle
+                Grid.Row="0"
+                HorizontalAlignment="Center"
+                Width="100"
+                Fill="{StaticResource PhoneBackgroundBrush}"
+                Opacity="0.3" />
+            <TextBlock
+                Grid.Row="0"
+                x:Name="MapScaleTextBlock"
+                HorizontalAlignment="Center"
+                Text="Map scale"
+                />
+            <Image
+                Grid.Row="1"
+                x:Name="MapScaleImage"
+                Width="150"
+                Height="15"
+                Stretch="Fill"
+                Source="Assets/Graphics/map_scale.png"
+                />
+        </Grid>
+        
         <TextBlock
             x:Name="DebugTextBlock"
             Margin="10,-10,-10,640"
@@ -61,6 +89,13 @@
         <src:LocationUsageQueryDialog
             x:Name="LocationUsageQueryDialog"
             />
+
+        <!-- Feedback overlay -->
+        <rma:FeedbackOverlay x:Name="FeedbackOverlay"
+            Grid.RowSpan="2"
+            FeedbackTo="not.valid@email.com"
+            ApplicationName="Compass"
+            CompanyName="Tomi" />
     </Grid>
 
 </phone:PhoneApplicationPage>

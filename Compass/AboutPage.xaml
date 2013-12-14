@@ -31,55 +31,69 @@
 
         <!--ContentPanel - place additional content here-->
         <Grid x:Name="ContentPanel" Grid.Row="1" Margin="12,0,12,0">
-            <StackPanel>
-                <TextBlock
-                    Foreground="{StaticResource PhoneAccentBrush}"
-                    FontSize="{StaticResource PhoneFontSizeExtraLarge}"
-                    FontWeight="ExtraBold"
-                    Text="{Binding Path=LocalizedResources.AppTitleInAbout, Source={StaticResource LocalizedStrings}}"
-                    />
-                <TextBlock
-                    x:Name="VersionTextBlock"
-                    Style="{StaticResource PhoneTextSubtleStyle}"
-                    Text="Version x.x.x"
-                    />
-                <TextBlock
-                    Margin="0,24,0,0"
-                    TextWrapping="Wrap"
-                    Text="Compass is an orienteering application, which combines HERE Maps with the magnetometer (compass) sensor and a realistic looking, interactive compass instrument. The compass plate can be manipulated with gestures; it can be dragged and rotated. In addition, the bearing component within the control can also be rotated."
-                    />
-                <TextBlock
-                    Margin="0,24,0,0"
-                    TextWrapping="Wrap"
-                    Text="Compass is an open source project. You can find the latest source code, report bugs and contribute to this project in GitHub:"
-                    />
-                <HyperlinkButton
-                    Margin="-12,0,0,0"
-                    Foreground="{StaticResource PhoneAccentBrush}"
-                    FontSize="{StaticResource PhoneFontSizeNormal}"
-                    Content="https://github.com/nokia-developer/compass-wp"
-                    NavigateUri="https://github.com/nokia-developer/compass-wp"
-                    TargetName="_blank"
-                    />
-                <TextBlock
-                    Margin="0,24,0,0"
-                    Text="Known issues:"
-                    />
-                <TextBlock
-                    Margin="12,0,0,0"
-                    TextWrapping="Wrap">
-                    <Run Text="- The compass plate gets clipped near the edges of the screen." />
-                </TextBlock>
-                <TextBlock
-                    Margin="0,48,0,0"
-                    Style="{StaticResource PhoneTextSubtleStyle}"
-                    TextWrapping="Wrap">
-                    <Run Text="{Binding Path=LocalizedResources.CopyrightText, Source={StaticResource LocalizedStrings}}" />
-                    <LineBreak />
-                    <Run Text="{Binding Path=LocalizedResources.AllRightsReserved, Source={StaticResource LocalizedStrings}}" />
-                </TextBlock>
-
-            </StackPanel>
+            <Image
+                Grid.Row="0"
+                Margin="-200,350,0,0"
+                Width="800"
+                Height="800"
+                Opacity="0.2"
+                Source="Assets/Graphics/splash_screen_image.png"
+                />
+            <ScrollViewer Grid.Row="0">
+                <StackPanel>
+                    <TextBlock
+                        Foreground="{StaticResource PhoneAccentBrush}"
+                        FontSize="{StaticResource PhoneFontSizeExtraLarge}"
+                        FontWeight="ExtraBold"
+                        Text="{Binding Path=LocalizedResources.AppTitleInAbout, Source={StaticResource LocalizedStrings}}"
+                        />
+                    <TextBlock
+                        x:Name="VersionTextBlock"
+                        Style="{StaticResource PhoneTextSubtleStyle}"
+                        Text="Version x.x.x"
+                        />
+                    <TextBlock
+                        Margin="0,24,0,0"
+                        TextWrapping="Wrap"
+                        Text="Compass is an orienteering application, which combines HERE Maps with the magnetometer (compass) sensor and a realistic looking, interactive compass instrument. The compass plate can be manipulated with gestures; it can be dragged and rotated. In addition, the bearing component within the control can also be rotated."
+                        />
+                    <TextBlock
+                        Margin="0,24,0,0"
+                        TextWrapping="Wrap"
+                        Text="Compass is an open source project. You can find the latest source code, report bugs and contribute to this project in GitHub:"
+                        />
+                    <HyperlinkButton
+                        Margin="-12,0,0,0"
+                        Foreground="{StaticResource PhoneAccentBrush}"
+                        FontSize="{StaticResource PhoneFontSizeNormal}"
+                        Content="https://github.com/nokia-developer/compass-wp"
+                        NavigateUri="https://github.com/nokia-developer/compass-wp"
+                        TargetName="_blank"
+                        />
+                    <TextBlock
+                        Margin="0,24,0,0"
+                        Text="Known issues:"
+                        />
+                    <TextBlock
+                        Margin="12,0,0,0"
+                        TextWrapping="Wrap">
+                        <Run Text="- The compass plate gets clipped near the edges of the screen." />
+                    </TextBlock>
+                    <TextBlock
+                        Margin="0,24,0,0"
+                        Style="{StaticResource PhoneTextSubtleStyle}"
+                        TextWrapping="Wrap">
+                        <Run Text="Developed by Tomi Paananen." />
+                        <LineBreak />
+                        <Run Text="Follow me on Twitter: @tompaana" />
+                        <LineBreak />
+                        <LineBreak />
+                        <Run Text="{Binding Path=LocalizedResources.CopyrightText, Source={StaticResource LocalizedStrings}}" />
+                        <LineBreak />
+                        <Run Text="{Binding Path=LocalizedResources.AllRightsReserved, Source={StaticResource LocalizedStrings}}" />
+                    </TextBlock>
+                </StackPanel>
+            </ScrollViewer>
         </Grid>
     </Grid>
 

@@ -37,6 +37,13 @@ namespace Compass
             {
                 HeadingAccuracyTextBlock.Text += "Calibration is required.";
             }
+
+            RotateMapSwitch.IsChecked = _appSettings.RotateMap;
+
+            if (!App.Properties.HasCompass)
+            {
+                RotateMapSwitch.IsEnabled = false;
+            }
         }
 
         private void LocationUsageToggleSwitch_Checked(object sender, RoutedEventArgs e)
@@ -59,6 +66,16 @@ namespace Compass
         {
             _appSettings.HeadingAccuracy = AppSettings.CalibrationRequested;
             NavigationService.GoBack();
+        }
+
+        private void RotateMapSwitch_Checked(object sender, RoutedEventArgs e)
+        {
+            _appSettings.RotateMap = true;
+        }
+
+        private void RotateMapSwitch_Unchecked(object sender, RoutedEventArgs e)
+        {
+            _appSettings.RotateMap = false;
         }
     }
 }

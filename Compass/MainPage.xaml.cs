@@ -32,26 +32,29 @@ using Compass.Resources;
 namespace Compass
 {
     /// <summary>
-    /// 
+    /// The application main page.
     /// </summary>
     public partial class MainPage : PhoneApplicationPage
     {
         // Constants
-        private const String DebugTag = "MainPage.";
+        private const string DebugTag = "MainPage.";
 
         // Placeholder for HERE Maps application ID and token
-        private const String ApplicationId = "";
-        private const String AuthenticationToken = "";
+        private const string ApplicationId = "";
+        private const string AuthenticationToken = "";
 
-        private const String CalibrationHintImageUri = "Assets/Graphics/calibration_hint.png";
-        private const String CalibrationHintImageDarkUri = "Assets/Graphics/calibration_hint_dark.png";
-        private const String ToggleFullscreenModeIconUri = "Assets/Graphics/fullscreen_icon.png";
-        private const String CenterToLocationIconUri = "Assets/Graphics/center_icon.png";
-        private const String ToggleMapModeIconUri = "Assets/Graphics/map_icon.png";
-        private const String LocationMarkerImageUri = "Assets/Graphics/location_marker.png";
-        private const String LocationMarkerImageGrayUri = "Assets/Graphics/location_marker_gray.png";
-        private const String CalibrationSoundEffectUri1 = "Assets/Sounds/calibration.wav";
-        private const String CalibrationSoundEffectUri2 = "Assets/Sounds/calibration_2.wav";
+        private const string CalibrationHintImageUri = "Assets/Graphics/calibration_hint.png";
+        private const string CalibrationHintImageDarkUri = "Assets/Graphics/calibration_hint_dark.png";
+        private const string FullscreenModeOffIconUri = "Assets/Graphics/fullscreen_icon_off.png";
+        private const string FullscreenModeOnIconUri = "Assets/Graphics/fullscreen_icon_on.png";
+        private const string CenterToLocationIconUri = "Assets/Graphics/center_icon.png";
+        private const string AutoNorthOffButtonIconUri = "Assets/Graphics/auto_north_icon_off.png";
+        private const string AutoNorthOnButtonIconUri = "Assets/Graphics/auto_north_icon_on.png";
+        private const string ToggleMapModeIconUri = "Assets/Graphics/map_icon.png";
+        private const string LocationMarkerImageUri = "Assets/Graphics/location_marker.png";
+        private const string LocationMarkerImageGrayUri = "Assets/Graphics/location_marker_gray.png";
+        private const string CalibrationSoundEffectUri1 = "Assets/Sounds/calibration.wav";
+        private const string CalibrationSoundEffectUri2 = "Assets/Sounds/calibration_2.wav";
         private const double CompassControlPlateHeightNormal = 400;
         private const double CompassControlPlateHeightFullscreen = 690;
         private const double DegreesToRads = Math.PI / 180;
@@ -80,6 +83,8 @@ namespace Compass
         private SoundEffectInstance _calibrationSoundEffect2 = null;
         private Timer _locationTimer = null;
         private Timer _calibrationTimer = null;
+        private ApplicationBarIconButton _toggleFullscreenButton = null;
+        private ApplicationBarIconButton _toggleAutoNorthButton = null;
         private double _locationAccuracy = 0;
         private double _previousManipulationDeltaX = 0;
         private double _previousManipulationDeltaY = 0;
@@ -89,6 +94,7 @@ namespace Compass
         private double _previousCompassX = 0;
         private double _previousCompassY = 0;
         private double _zoomLevel = DefaultMapZoomLevel;
+        private double _currentMetersInPixels = 0;
         private bool _wasLaunched = false;
         private bool _compassBeingMoved = false;
         private bool _inFullscreenMode = false;
@@ -119,7 +125,7 @@ namespace Compass
         /// </summary>
         private void InitializeAndStartCompass()
         {
-            if (Microsoft.Devices.Sensors.Compass.IsSupported)
+            if (App.Properties.HasCompass)
             {
                 // Setup and start the compass
                 _compass = new Microsoft.Devices.Sensors.Compass();
@@ -165,6 +171,7 @@ namespace Compass
             _appSettings.LoadSettings();
             _coordinate = _appSettings.LastKnownLocation;
             MyMap.CartographicMode = _appSettings.MapMode;
+            CompassControl.AutoNorth = _appSettings.AutoNorth;
         }
 
         /// <summary>
@@ -173,7 +180,7 @@ namespace Compass
         /// </summary>
         private void ConstructCalibrationView()
         {
-            CalibrationView.Background = UiHelper.GetThemeBackgroundBrush();
+            CalibrationView.Background = App.Properties.ThemeBackgroundBrush;
             CalibrationView.Background.Opacity = 0.5;
 
             Thickness margin = new Thickness();
@@ -202,7 +209,7 @@ namespace Compass
             textBlock.Text = AppResources.CalibrationViewInfo;
             elements.Add(textBlock);
 
-            Uri uri = new Uri(UiHelper.PhoneHasDarkTheme ?
+            Uri uri = new Uri(App.Properties.HasDarkUiThemeInUse ?
                 CalibrationHintImageUri : CalibrationHintImageDarkUri, UriKind.Relative);
             StreamResourceInfo resourceInfo = Application.GetResourceStream(uri);
             BitmapImage bmp = new BitmapImage();
@@ -265,23 +272,31 @@ namespace Compass
 
             // Create a new button and set the text value to the localized
             // string from AppResources.
-            ApplicationBarIconButton appBarToggleFullscreenButton =
-                new ApplicationBarIconButton(new Uri(ToggleFullscreenModeIconUri, UriKind.Relative));
-            appBarToggleFullscreenButton.Text = AppResources.ToggleFullscreenButtonText;
-            appBarToggleFullscreenButton.Click += ToggleFullscreenButton_Click;
-            ApplicationBar.Buttons.Add(appBarToggleFullscreenButton);
+            _toggleFullscreenButton = new ApplicationBarIconButton(new Uri(FullscreenModeOffIconUri, UriKind.Relative));
+            _toggleFullscreenButton.Text = AppResources.ToggleFullscreenButtonText;
+            _toggleFullscreenButton.Click += ToggleFullscreenButton_Click;
+            ApplicationBar.Buttons.Add(_toggleFullscreenButton);
 
-            ApplicationBarIconButton appBarCenterToLocationButton =
+            ApplicationBarIconButton centerToLocationButton =
                 new ApplicationBarIconButton(new Uri(CenterToLocationIconUri, UriKind.Relative));
-            appBarCenterToLocationButton.Text = AppResources.CenterToLocationButtonText;
-            appBarCenterToLocationButton.Click += new EventHandler(CenterToLocation_Click);
-            ApplicationBar.Buttons.Add(appBarCenterToLocationButton);
+            centerToLocationButton.Text = AppResources.CenterToLocationButtonText;
+            centerToLocationButton.Click += new EventHandler(CenterToLocation_Click);
+            ApplicationBar.Buttons.Add(centerToLocationButton);
 
-            ApplicationBarIconButton appBarToggleMapModeButton =
+            string autoNorthButtonIconUri = _appSettings.AutoNorth
+                ? AutoNorthOnButtonIconUri : AutoNorthOffButtonIconUri;
+            Debug.WriteLine(DebugTag + ".BuildLocalizedApplicationBar(): "
+                + _appSettings.AutoNorth + " -> " + autoNorthButtonIconUri);
+            _toggleAutoNorthButton = new ApplicationBarIconButton(new Uri(autoNorthButtonIconUri, UriKind.Relative));
+            _toggleAutoNorthButton.Text = AppResources.AutoNorthButtonText;
+            _toggleAutoNorthButton.Click += new EventHandler(ToggleAutoNorth_Click);
+            ApplicationBar.Buttons.Add(_toggleAutoNorthButton);
+
+            ApplicationBarIconButton toggleMapModeButton =
                 new ApplicationBarIconButton(new Uri(ToggleMapModeIconUri, UriKind.Relative));
-            appBarToggleMapModeButton.Text = AppResources.ToggleMapModeButtonText;
-            appBarToggleMapModeButton.Click += new EventHandler(ToggleMapMode_Click);
-            ApplicationBar.Buttons.Add(appBarToggleMapModeButton);
+            toggleMapModeButton.Text = AppResources.ToggleMapModeButtonText;
+            toggleMapModeButton.Click += new EventHandler(ToggleMapMode_Click);
+            ApplicationBar.Buttons.Add(toggleMapModeButton);
 
             // Create menu items with the localized string from AppResources
             ApplicationBarMenuItem appBarMenuItem = new ApplicationBarMenuItem(AppResources.Settings);
@@ -327,7 +342,7 @@ namespace Compass
 
             System.Windows.Point positionOrigin = new System.Windows.Point(0.5, 0.5);
 
-            _accuracyCircle = UiHelper.CreateFilledCircle(LocationMarkerImageSize * 4, 75, 200, 0, 0);
+            _accuracyCircle = CreateFilledCircle(LocationMarkerImageSize * 4, 75, 200, 0, 0);
 
             MapOverlay accuracyCircleOverlay = new MapOverlay();
             accuracyCircleOverlay.Content = _accuracyCircle;
@@ -342,7 +357,9 @@ namespace Compass
             _mapLayer.Add(accuracyCircleOverlay);
             _mapLayer.Add(_locationMarkerOverlay);
 
+            UpdateMetersPerPixels();
             UpdateMapItems();
+            UpdateMapScale();
 
             MyMap.Layers.Add(_mapLayer);
 
@@ -353,6 +370,24 @@ namespace Compass
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Creates a circle with the given radius filled with the given color.
+        /// </summary>
+        /// <param name="radius">The radius of the circle.</param>
+        /// <param name="a">Color alpha level.</param>
+        /// <param name="r">Red.</param>
+        /// <param name="g">Green.</param>
+        /// <param name="b">Blue.</param>
+        /// <returns>The created circle as an ellipse object.</returns>
+        private Ellipse CreateFilledCircle(double radius, byte a, byte r, byte g, byte b)
+        {
+            Ellipse ellipse = new Ellipse();
+            ellipse.Width = radius * 2;
+            ellipse.Height = radius * 2;
+            ellipse.Fill = new SolidColorBrush(System.Windows.Media.Color.FromArgb(a, r, g, b));
+            return ellipse;
         }
 
         #endregion // Construction helper methods
@@ -395,7 +430,7 @@ namespace Compass
             Debug.WriteLine(DebugTag + "OnNavigatedTo(): " + e.IsNavigationInitiator);
 
             _wasLaunched = !e.IsNavigationInitiator;
-            String value = null;
+            string value = null;
             NavigationContext.QueryString.TryGetValue("was_launched", out value);
 
             if (value != null && value.Equals("true"))
@@ -434,6 +469,12 @@ namespace Compass
                 _calibrationTimer = new Timer(OnCalibrationTimerTimeout, null,
                     TimeSpan.FromSeconds(CalibrationTimerInterval),
                     TimeSpan.FromSeconds(CalibrationTimerInterval));
+            }
+
+            if (!_appSettings.RotateMap)
+            {
+                MyMap.Heading = 0;
+                CompassControl.AngleOffset = 0;
             }
 
             base.OnNavigatedTo(e);
@@ -500,7 +541,18 @@ namespace Compass
                     OnCalibrated();
                 }
 
-                CompassControl.CompassReading = e.SensorReading.TrueHeading;
+                double heading = e.SensorReading.TrueHeading;
+                CompassControl.CompassReading = heading;
+
+                if (_appSettings.RotateMap)
+                {
+                    MyMap.Heading = heading;
+
+                    if (!_inFullscreenMode)
+                    {
+                        CompassControl.AngleOffset = 360 - heading;
+                    }
+                }
             });
 
 #if (DEBUG)
@@ -668,6 +720,7 @@ namespace Compass
                     }
                     else
                     {
+                        UpdateMetersPerPixels();
                         UpdateMapItems();
                     }
 
@@ -696,12 +749,7 @@ namespace Compass
 
             MyMap.InvalidateMeasure();
 
-            // The ground resolution (in meters per pixel) varies depending on the level of detail
-            // and the latitude at which it’s measured. It can be calculated as follows:
-            double metersPerPixels =
-                (Math.Cos(_coordinate.Latitude * DegreesToRads) * CalcConstant)
-                / (256 * Math.Pow(2, MyMap.ZoomLevel));
-            double radius = _locationAccuracy / metersPerPixels;
+            double radius = _locationAccuracy / _currentMetersInPixels;
 
             _accuracyCircle.Width = radius * 2;
             _accuracyCircle.Height = radius * 2;
@@ -723,8 +771,40 @@ namespace Compass
 
             if (_coordinate != null)
             {
+                UpdateMetersPerPixels();
                 UpdateMapItems();
+                UpdateMapScale();
             }
+        }
+
+        /// <summary>
+        /// Updates the measurement in the map scale based on the current
+        /// number of meters per pixel.
+        /// </summary>
+        private void UpdateMapScale()
+        {
+            double mapScaleInMeters = MapScaleImage.Width * _currentMetersInPixels;
+
+            if (mapScaleInMeters > 1000)
+            {
+                MapScaleTextBlock.Text = Math.Round(mapScaleInMeters / 1000, 2) + " km";
+            }
+            else
+            {
+                MapScaleTextBlock.Text = Math.Round(mapScaleInMeters, 0) + " m";
+            }
+        }
+
+        /// <summary>
+        /// Updates the meters per pixels based on the zoom level and latitude.
+        /// The ground resolution (in meters per pixel) varies depending on the
+        /// level of detail and the latitude at which it’s measured.
+        /// </summary>
+        private void UpdateMetersPerPixels()
+        {
+            _currentMetersInPixels =
+                (Math.Cos(_coordinate.Latitude * DegreesToRads) * CalcConstant)
+                / (256 * Math.Pow(2, MyMap.ZoomLevel));
         }
 
         #endregion // Location and map handling
@@ -825,6 +905,7 @@ namespace Compass
                 CompassControl.PlateHeight = CompassControlPlateHeightNormal;
                 CompassControl.PlateAngle = _compassAngle;
                 FullscreenBackground.Visibility = Visibility.Collapsed;
+                _toggleFullscreenButton.IconUri = new Uri(FullscreenModeOffIconUri, UriKind.Relative);
             }
             else
             {
@@ -837,8 +918,10 @@ namespace Compass
                 margin.Left = 20;
 
                 CompassControl.PlateHeight = CompassControlPlateHeightFullscreen;
+                CompassControl.AngleOffset = 0;
                 CompassControl.PlateAngle = 0;
                 FullscreenBackground.Visibility = Visibility.Visible;
+                _toggleFullscreenButton.IconUri = new Uri(FullscreenModeOnIconUri, UriKind.Relative);
             }
 
             CompassControl.Margin = margin;
@@ -846,6 +929,7 @@ namespace Compass
             CompassControl.Height = CompassControl.PlateHeight;
             CompassControl.ManipulationEnabled = !CompassControl.ManipulationEnabled;
             _inFullscreenMode = !_inFullscreenMode;
+            _toggleAutoNorthButton.IsEnabled = !_inFullscreenMode;
         }
 
         /// <summary>
@@ -866,6 +950,20 @@ namespace Compass
             {
                 MyMap.SetView(_coordinate, _zoomLevel, MapAnimationKind.Linear);
             }
+        }
+
+        /// <summary>
+        /// Toggles the auto north on/off.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void ToggleAutoNorth_Click(object sender, EventArgs e)
+        {
+            _appSettings.AutoNorth = !_appSettings.AutoNorth;
+            CompassControl.AutoNorth = _appSettings.AutoNorth;
+            string autoNorthButtonIconUri = _appSettings.AutoNorth
+                ? AutoNorthOnButtonIconUri : AutoNorthOffButtonIconUri;
+            _toggleAutoNorthButton.IconUri = new Uri(autoNorthButtonIconUri, UriKind.Relative);
         }
 
         /// <summary>

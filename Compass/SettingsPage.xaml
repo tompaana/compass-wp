@@ -62,6 +62,13 @@
                     Content="Calibrate compass"
                     Click="CalibrateCompassButton_Click"
                     />
+                <toolkit:ToggleSwitch
+                    x:Name="RotateMapSwitch"
+                    Margin="0,24,0,0"
+                    Header="{Binding Path=LocalizedResources.RotateMapSwitchHeader, Source={StaticResource LocalizedStrings}}"
+                    Checked="RotateMapSwitch_Checked"
+                    Unchecked="RotateMapSwitch_Unchecked"
+                    />
             </StackPanel>
         </Grid>
     </Grid>

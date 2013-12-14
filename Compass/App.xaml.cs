@@ -12,6 +12,12 @@ namespace Compass
 {
     public partial class App : Application
     {
+        public static DeviceProperties Properties
+        {
+            get;
+            set;
+        }
+
         /// <summary>
         /// Provides easy access to the root frame of the Phone Application.
         /// </summary>

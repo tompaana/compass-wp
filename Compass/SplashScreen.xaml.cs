@@ -24,6 +24,8 @@ namespace Compass
 
         void SplashScreen_Loaded(object sender, RoutedEventArgs e)
         {
+            App.Properties = DeviceProperties.GetInstance(); // Construct the DeviceProperties instance
+            App.Properties.Init();
             NavigationService.Navigate(new Uri("/MainPage.xaml?was_launched=true", UriKind.Relative));
         }
     }

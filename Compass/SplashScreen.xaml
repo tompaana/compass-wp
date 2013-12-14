@@ -32,6 +32,11 @@
         
         <!--ContentPanel - place additional content here-->
         <Grid x:Name="ContentPanel" Grid.Row="0" Margin="12,0,12,0">
+            <ProgressBar
+                Margin="0,-580,0,0"
+                Foreground="White"
+                IsIndeterminate="True"
+                />
             <TextBlock
                 Margin="20,200,0,0"
                 Foreground="White"

@@ -49,6 +49,7 @@ namespace Compass.Ui
         private double _plateCenterY = 0;
         private double _previousX = 0;
         private double _previousY = 0;
+        private double _adjustedAngle = 0;
         private int _plateManipulationBottom = 0;
         private int _scaleManipulationTop = 0;
         private int _scaleManipulationBottom = 0;
@@ -133,9 +134,46 @@ namespace Compass.Ui
         }
 
         /// <summary>
+        /// If true, the orienteering box (scale) will always be automatically
+        /// set to north.
+        /// </summary>
+        private bool _autoNorth;
+        public bool AutoNorth
+        {
+            get
+            {
+                return _autoNorth;
+            }
+            set
+            {
+                _autoNorth = value;
+
+                if (_autoNorth == true)
+                {
+                    RotateBoxToNorth(AngleOffset);
+                }
+            }
+        }
+
+        private double _angleOffset = 0;
+        public double AngleOffset
+        {
+            get
+            {
+                return _angleOffset;
+            }
+            set
+            {
+                _angleOffset = value;
+                PlateRotation.Angle = _angleOffset + _adjustedAngle;
+                UpdateNeedleAngle();
+            }
+        }
+
+        /// <summary>
         /// Enabling/disabling touch manipulation.
         /// </summary>
-        public Boolean ManipulationEnabled
+        public bool ManipulationEnabled
         {
             get;
             set;
@@ -150,6 +188,15 @@ namespace Compass.Ui
             PlateHeight = DefaultPlateHeight;
             ManipulatedArea = CompassControlArea.None;
             ManipulationEnabled = true;
+        }
+
+        /// <summary>
+        /// Rotates the box (scale) to point to north.
+        /// </summary>
+        /// <param name="offset"></param>
+        public void RotateBoxToNorth(double offset)
+        {
+            ScaleRotation.Angle = offset - PlateRotation.Angle;
         }
 
         /// <summary>
@@ -243,10 +290,16 @@ namespace Compass.Ui
                     angleDelta += 360;
                 }
 
-                PlateRotation.Angle = (PlateRotation.Angle + angleDelta) % 360;
+                _adjustedAngle = (PlateRotation.Angle + angleDelta) % 360;
+                PlateRotation.Angle = AngleOffset + _adjustedAngle;
                 UpdateNeedleAngle();
+
+                if (AutoNorth)
+                {
+                    RotateBoxToNorth(AngleOffset);
+                }
             }
-            else if (ManipulatedArea == CompassControlArea.Scale)
+            else if (ManipulatedArea == CompassControlArea.Scale && !AutoNorth)
             {
                 double x = e.ManipulationOrigin.X;
                 double y = e.ManipulationOrigin.Y;
