@@ -14,7 +14,7 @@ using Microsoft.Phone.Shell;
 using System.Diagnostics;
 using System.Windows.Input;
 
-namespace Compass.Ui
+namespace Compass
 {
     /// <summary>
     /// 
@@ -22,8 +22,8 @@ namespace Compass.Ui
     public partial class CompassControl : UserControl
     {
         // Constants
+        public static readonly double DefaultPlateHeight = 350;
         private const String DebugTag = "CompassControl.";
-        private const double DefaultPlateHeight = 400;
         private const double RadiansToDegreesCoefficient = 57.2957795; // 180 / PI
         private const double ScaleRelativeTopMargin = 0.32f;
         private const double PlateManipulationRelativeTopMargin = 0.15f;
@@ -346,8 +346,13 @@ namespace Compass.Ui
                 return;
             }
 
-            Plate.Width = relativeSize * PlateNativeWidth;
-            Plate.Height = relativeSize * PlateNativeHeight;
+            double plateWidth = relativeSize * PlateNativeWidth;
+            double plateHeight = relativeSize * PlateNativeHeight;
+
+            PlateBackground.Width = plateWidth;
+            PlateBackground.Height = plateHeight;
+            Plate.Width = plateWidth;
+            Plate.Height = plateHeight;
 
             Debug.WriteLine(DebugTag + "SetRelativeSize(): " + relativeSize
                 + " -> Plate size: " + Plate.Width + "x" + Plate.Height);
@@ -360,13 +365,13 @@ namespace Compass.Ui
             _plateCenterY = relativeSize * PlateNativeHeight / 2;
 
             Thickness topMargin = new Thickness();
-            topMargin.Top = relativeSize * PlateNativeHeight * ScaleRelativeTopMargin;
+            topMargin.Top = plateHeight * ScaleRelativeTopMargin;
             ScaleShadow.Margin = topMargin;
             Scale.Margin = topMargin;
             Needle.Margin = topMargin;
 
             _plateManipulationBottom =
-                (int)(PlateNativeHeight * relativeSize * PlateManipulationRelativeTopMargin);
+                (int)(plateHeight * PlateManipulationRelativeTopMargin);
             _scaleManipulationTop = (int)(topMargin.Top + 60 * relativeSize);
             _scaleManipulationBottom = (int)(_scaleManipulationTop + ScaleNativeHeight * relativeSize);
 

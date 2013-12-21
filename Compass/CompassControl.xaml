@@ -1,13 +1,13 @@
 ﻿<!--
     Copyright (c) 2012-2013 Nokia Corporation.
 -->
-<UserControl x:Class="Compass.Ui.CompassControl"
+<UserControl x:Class="Compass.CompassControl"
     x:Name="CompassControlRoot"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:local="clr-namespace:Compass.Ui"
+    xmlns:local="clr-namespace:Compass"
     Margin="0"
     Padding="0"
     FontFamily="{StaticResource PhoneFontFamilyNormal}"
@@ -24,22 +24,36 @@
                 CenterY="0.5"
                 Angle="0" />
         </UIElement.RenderTransform>
-        <Image x:Name="Plate"
-               Source="/Assets/Graphics/compass_plate.png"
-               Width="290"
-               Height="600"
-               Stretch="Uniform" />
-        <Image x:Name="ScaleShadow"
-               Source="/Assets/Graphics/scale_shadow.png"
-               Width="276"
-               Margin="0, 190, 0, 0"
-               Stretch="Uniform" />
-        <Image x:Name="Scale"
-               Source="/Assets/Graphics/scale.png"
-               Width="276"
-               Margin="0, 190, 0, 0"
-               Stretch="Uniform"
-               RenderTransformOrigin="0.5, 0.5">
+        <Image
+            x:Name="PlateBackground"
+            Width="290"
+            Height="600"
+            Stretch="Uniform"
+            Opacity="0.2"
+            Source="/Assets/Graphics/compass_plate_bg_dark.png"
+            Visibility="Visible"
+            />
+        <Image
+            x:Name="Plate"
+            Width="290"
+            Height="600"
+            Stretch="Uniform"
+            Source="/Assets/Graphics/compass_plate.png"
+            />
+        <Image
+            x:Name="ScaleShadow"
+            Margin="0, 190, 0, 0"
+            Width="276"
+            Stretch="Uniform"
+            Source="/Assets/Graphics/scale_shadow.png"
+            />
+        <Image
+            x:Name="Scale"
+            Margin="0, 190, 0, 0"
+            Width="276"
+            Stretch="Uniform"
+            RenderTransformOrigin="0.5, 0.5"
+            Source="/Assets/Graphics/scale.png">
             <UIElement.RenderTransform>
                 <RotateTransform
                 x:Name="ScaleRotation"
@@ -48,12 +62,13 @@
                 Angle="0" />
             </UIElement.RenderTransform>
         </Image>
-        <Image x:Name="Needle"
-               Source="/Assets/Graphics/compass_needle.png"
-               Width="21"
-               Margin="0, 190, 0, 0"
-               Stretch="Uniform"
-               RenderTransformOrigin="0.5, 0.5">
+        <Image
+            x:Name="Needle"
+            Margin="0, 190, 0, 0"
+            Width="21"
+            Stretch="Uniform"
+            RenderTransformOrigin="0.5, 0.5"
+            Source="/Assets/Graphics/compass_needle.png">
             <UIElement.RenderTransform>
                 <RotateTransform
                 x:Name="NeedleRotation"

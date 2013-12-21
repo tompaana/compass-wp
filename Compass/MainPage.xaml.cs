@@ -170,7 +170,19 @@ namespace Compass
             _appSettings = AppSettings.GetInstance();
             _appSettings.LoadSettings();
             _coordinate = _appSettings.LastKnownLocation;
-            MyMap.CartographicMode = _appSettings.MapMode;
+            MapCartographicMode mapMode = _appSettings.MapMode;
+            MyMap.CartographicMode = mapMode;
+
+            if (mapMode == MapCartographicMode.Aerial
+                || mapMode == MapCartographicMode.Hybrid)
+            {
+                CompassControl.PlateBackground.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                CompassControl.PlateBackground.Visibility = Visibility.Collapsed;
+            }
+
             CompassControl.AutoNorth = _appSettings.AutoNorth;
         }
 
@@ -272,7 +284,9 @@ namespace Compass
 
             // Create a new button and set the text value to the localized
             // string from AppResources.
-            _toggleFullscreenButton = new ApplicationBarIconButton(new Uri(FullscreenModeOffIconUri, UriKind.Relative));
+            string fullscreenModeIconUri = _inFullscreenMode
+                ? FullscreenModeOnIconUri : FullscreenModeOffIconUri;
+            _toggleFullscreenButton = new ApplicationBarIconButton(new Uri(fullscreenModeIconUri, UriKind.Relative));
             _toggleFullscreenButton.Text = AppResources.ToggleFullscreenButtonText;
             _toggleFullscreenButton.Click += ToggleFullscreenButton_Click;
             ApplicationBar.Buttons.Add(_toggleFullscreenButton);
@@ -285,8 +299,6 @@ namespace Compass
 
             string autoNorthButtonIconUri = _appSettings.AutoNorth
                 ? AutoNorthOnButtonIconUri : AutoNorthOffButtonIconUri;
-            Debug.WriteLine(DebugTag + ".BuildLocalizedApplicationBar(): "
-                + _appSettings.AutoNorth + " -> " + autoNorthButtonIconUri);
             _toggleAutoNorthButton = new ApplicationBarIconButton(new Uri(autoNorthButtonIconUri, UriKind.Relative));
             _toggleAutoNorthButton.Text = AppResources.AutoNorthButtonText;
             _toggleAutoNorthButton.Click += new EventHandler(ToggleAutoNorth_Click);
@@ -477,6 +489,12 @@ namespace Compass
                 CompassControl.AngleOffset = 0;
             }
 
+            if (_inFullscreenMode)
+            {
+                CompassControl.AngleOffset = 0;
+                CompassControl.PlateAngle = 0;
+            }
+
             base.OnNavigatedTo(e);
         }
 
@@ -605,13 +623,13 @@ namespace Compass
             double x = e.ManipulationOrigin.X;
             double y = e.ManipulationOrigin.Y;
 
-            Compass.Ui.CompassControl.CompassControlArea area =
+            Compass.CompassControl.CompassControlArea area =
                 CompassControl.ManipulatedArea;
             Debug.WriteLine(DebugTag + "OnManipulationStarted(): Area at ["
                 + x + ", " + y + "] == " + area);
 
-            if (area == Compass.Ui.CompassControl.CompassControlArea.PlateCenter
-                || area == Compass.Ui.CompassControl.CompassControlArea.PlateBottom)
+            if (area == Compass.CompassControl.CompassControlArea.PlateCenter
+                || area == Compass.CompassControl.CompassControlArea.PlateBottom)
             {
                 // The touched area is on the compass
 
@@ -902,7 +920,7 @@ namespace Compass
                 margin.Left = _previousCompassX;
                 margin.Top = _previousCompassY;
 
-                CompassControl.PlateHeight = CompassControlPlateHeightNormal;
+                CompassControl.PlateHeight = Compass.CompassControl.DefaultPlateHeight;
                 CompassControl.PlateAngle = _compassAngle;
                 FullscreenBackground.Visibility = Visibility.Collapsed;
                 _toggleFullscreenButton.IconUri = new Uri(FullscreenModeOffIconUri, UriKind.Relative);
@@ -978,18 +996,22 @@ namespace Compass
                 case MapCartographicMode.Road:
                     _appSettings.MapMode = MapCartographicMode.Aerial;
                     MyMap.CartographicMode = _appSettings.MapMode;
+                    CompassControl.PlateBackground.Visibility = Visibility.Visible;
                     break;
                 case MapCartographicMode.Aerial:
                     _appSettings.MapMode = MapCartographicMode.Hybrid;
                     MyMap.CartographicMode = _appSettings.MapMode;
+                    CompassControl.PlateBackground.Visibility = Visibility.Visible;
                     break;
                 case MapCartographicMode.Hybrid:
                     _appSettings.MapMode = MapCartographicMode.Terrain;
                     MyMap.CartographicMode = _appSettings.MapMode;
+                    CompassControl.PlateBackground.Visibility = Visibility.Collapsed;
                     break;
                 default:
                     _appSettings.MapMode = MapCartographicMode.Road;
                     MyMap.CartographicMode = _appSettings.MapMode;
+                    CompassControl.PlateBackground.Visibility = Visibility.Collapsed;
                     break;
             }
         }

@@ -17,7 +17,7 @@ using System.Windows.Controls;
 
 using Compass.Resources;
 
-namespace Compass.Ui
+namespace Compass
 {
     /// <summary>
     /// The LocationUsageQueryDialog is a user control which can be placed on

@@ -10,7 +10,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:maps="clr-namespace:Microsoft.Phone.Maps.Controls;assembly=Microsoft.Phone.Maps"
-    xmlns:src="clr-namespace:Compass.Ui"
+    xmlns:src="clr-namespace:Compass"
     xmlns:rma="clr-namespace:RateMyApp.Controls;assembly=RateMyApp"
     mc:Ignorable="d"
     FontFamily="{StaticResource PhoneFontFamilyNormal}"
@@ -22,11 +22,14 @@
     <!--LayoutRoot is the root grid where all page content is placed-->
     <Grid x:Name="LayoutRoot"
           Background="Transparent">
+        
         <!-- Map control -->
-        <maps:Map x:Name="MyMap"
-                  Center="65, 24.5"
-                  ZoomLevel="5"
-                  ZoomLevelChanged="OnMapZoomLevelChanged" />
+        <maps:Map
+            x:Name="MyMap"
+            Center="65, 24.5"
+            ZoomLevel="5"
+            ZoomLevelChanged="OnMapZoomLevelChanged"
+            />
 
         <Grid Margin="-300,580,0,0" Width="150" Height="50">
             <Grid.RowDefinitions>
@@ -66,7 +69,7 @@
         <Rectangle
             x:Name="FullscreenBackground"
             Margin="0,0,0,0"
-            Opacity="0.65"
+            Opacity="0.1"
             Fill="White"
             Visibility="Collapsed"
             />
@@ -81,8 +84,7 @@
         <!-- Fullscreen view to help to calibrate compass -->
         <Grid
             x:Name="CalibrationView"
-            Width="480"
-            Height="800"
+            Margin="0,0,0,0"
             Visibility="Collapsed" />
 
         <!-- Dialog for querying the permission to use location -->
