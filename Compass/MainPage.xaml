@@ -19,6 +19,41 @@
     SupportedOrientations="Portrait" Orientation="Portrait"
     shell:SystemTray.IsVisible="True">
 
+    <phone:PhoneApplicationPage.Resources>
+        <Storyboard x:Name="ToggleFullscreenStoryBoard" Completed="OnToggleFullscreenStoryBoardCompleted">
+            <DoubleAnimation 
+                x:Name="CompassPlateAngleAnimation"
+                Storyboard.TargetName="CompassControl"
+                Storyboard.TargetProperty="PlateAngle" 
+                Duration="0:0:0.2"
+                />
+            <DoubleAnimation 
+                x:Name="CompassPlateHeightAnimation"
+                Storyboard.TargetName="CompassControl"
+                Storyboard.TargetProperty="PlateHeight" 
+                Duration="0:0:0.2"
+                />
+            <DoubleAnimation
+                x:Name="CompassControlXAnimation"
+                Storyboard.TargetName="CompassControl"
+                Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)" 
+                Duration="0:0:0.2"
+                />
+            <DoubleAnimation
+                x:Name="CompassControlYAnimation"
+                Storyboard.TargetName="CompassControl"
+                Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" 
+                Duration="0:0:0.2"
+                />
+            <DoubleAnimation 
+                x:Name="FullscreenBackgroundOpacityAnimation"
+                Storyboard.TargetName="FullscreenBackground"
+                Storyboard.TargetProperty="Opacity" 
+                Duration="0:0:0.2"
+                />
+        </Storyboard>
+    </phone:PhoneApplicationPage.Resources>
+
     <!--LayoutRoot is the root grid where all page content is placed-->
     <Grid x:Name="LayoutRoot"
           Background="Transparent">
@@ -69,7 +104,7 @@
         <Rectangle
             x:Name="FullscreenBackground"
             Margin="0,0,0,0"
-            Opacity="0.1"
+            Opacity="0"
             Fill="White"
             Visibility="Collapsed"
             />
@@ -78,8 +113,15 @@
         <src:CompassControl
             x:Name="CompassControl"
             Width="{Binding ElementName=CompassControl, Path=PlateWidth}"
-            Height="{Binding ElementName=CompassControl, Path=PlateHeight}"
-            />
+            Height="{Binding ElementName=CompassControl, Path=PlateHeight}">
+            <UIElement.RenderTransform>
+                <TranslateTransform
+                    x:Name="CompassControlPosition"
+                    X="0"
+                    Y="0"
+                    />
+            </UIElement.RenderTransform>
+        </src:CompassControl>
 
         <!-- Fullscreen view to help to calibrate compass -->
         <Grid

@@ -55,15 +55,16 @@ namespace Compass
         private const string LocationMarkerImageGrayUri = "Assets/Graphics/location_marker_gray.png";
         private const string CalibrationSoundEffectUri1 = "Assets/Sounds/calibration.wav";
         private const string CalibrationSoundEffectUri2 = "Assets/Sounds/calibration_2.wav";
-        private const double CompassControlPlateHeightNormal = 400;
-        private const double CompassControlPlateHeightFullscreen = 690;
+        private const double CompassControlPlateHeightFullscreen = 680;
         private const double DegreesToRads = Math.PI / 180;
         private const double CalcConstant = 2 * Math.PI * 6378137;
         private const double CalibrationViewHorizontalMargin = 30;
         private const double CalibrationViewVerticalMargin = 50;
         private const double LocationMarkerImageSize = 40;
-        private const int CompassUpdateInterval = 40; // Milliseconds (must be multiple of 20)
-        private const int CompassDraggingSpeed = 2;
+        private const double CompassControlFullscreenY = -30;
+        private const double FullscreenBackroundOpacity = 0.2;
+        private const int CompassUpdateInterval = 60; // Milliseconds (must be multiple of 20)
+        private const int CompassDraggingSpeed = 1;
         private const int DefaultMapZoomLevel = 17;
         private const int LocationUpdateInterval = 10; // Seconds
         private const int ShowCalibrationViewDelay = 3; // Seconds
@@ -79,11 +80,13 @@ namespace Compass
         private MapOverlay _locationMarkerOverlay = null;
         private Ellipse _accuracyCircle = null;
         private Image _locationMarkerImage = null;
+        private TranslateTransform _compassControlPosition = null;
         private SoundEffectInstance _calibrationSoundEffect1 = null;
         private SoundEffectInstance _calibrationSoundEffect2 = null;
         private Timer _locationTimer = null;
         private Timer _calibrationTimer = null;
         private ApplicationBarIconButton _toggleFullscreenButton = null;
+        private ApplicationBarIconButton _centerToLocationButton = null;
         private ApplicationBarIconButton _toggleAutoNorthButton = null;
         private double _locationAccuracy = 0;
         private double _previousManipulationDeltaX = 0;
@@ -291,11 +294,11 @@ namespace Compass
             _toggleFullscreenButton.Click += ToggleFullscreenButton_Click;
             ApplicationBar.Buttons.Add(_toggleFullscreenButton);
 
-            ApplicationBarIconButton centerToLocationButton =
-                new ApplicationBarIconButton(new Uri(CenterToLocationIconUri, UriKind.Relative));
-            centerToLocationButton.Text = AppResources.CenterToLocationButtonText;
-            centerToLocationButton.Click += new EventHandler(CenterToLocation_Click);
-            ApplicationBar.Buttons.Add(centerToLocationButton);
+            _centerToLocationButton = new ApplicationBarIconButton(new Uri(CenterToLocationIconUri, UriKind.Relative));
+            _centerToLocationButton.Text = AppResources.CenterToLocationButtonText;
+            _centerToLocationButton.Click += new EventHandler(CenterToLocation_Click);
+            _centerToLocationButton.IsEnabled = _appSettings.LocationAllowed;
+            ApplicationBar.Buttons.Add(_centerToLocationButton);
 
             string autoNorthButtonIconUri = _appSettings.AutoNorth
                 ? AutoNorthOnButtonIconUri : AutoNorthOffButtonIconUri;
@@ -404,6 +407,8 @@ namespace Compass
 
         #endregion // Construction helper methods
 
+        #region Page navigation and callbacks for loaded events
+
         /// <summary>
         /// Provides the application ID and token for the maps.
         /// </summary>
@@ -423,6 +428,7 @@ namespace Compass
         private void MainPage_Loaded(object sender, RoutedEventArgs e)
         {
             Debug.WriteLine(DebugTag + "MainPage_Loaded()");
+            _compassControlPosition = CompassControl.RenderTransform as TranslateTransform;
 
             if (_wasLaunched && !_appSettings.LocationAllowed)
             {
@@ -491,7 +497,6 @@ namespace Compass
 
             if (_inFullscreenMode)
             {
-                CompassControl.AngleOffset = 0;
                 CompassControl.PlateAngle = 0;
             }
 
@@ -519,6 +524,8 @@ namespace Compass
             _appSettings.SaveSettings();
             base.OnNavigatedFrom(e);
         }
+
+        #endregion // Page navigation and callbacks for loaded events
 
         #region Compass sensor event handling
 
@@ -638,9 +645,20 @@ namespace Compass
                 // manipulation coordinates are not.
                 e.ManipulationContainer = this;
 
-                Thickness margin = CompassControl.Margin;
-                _startCompassX = margin.Left;
-                _startCompassY = margin.Top;
+                if (_compassControlPosition != CompassControl.RenderTransform as TranslateTransform)
+                {
+                    _compassControlPosition = CompassControl.RenderTransform as TranslateTransform;
+                }
+
+                if (_compassControlPosition != null)
+                {
+                    _startCompassX = _compassControlPosition.X;
+                    _startCompassY = _compassControlPosition.Y;
+                }
+                else
+                {
+                    Debug.WriteLine(DebugTag + "OnManipulationStarted(): _compassControlPosition still null!");
+                }
 
                 _previousManipulationDeltaX = -1;
                 _previousManipulationDeltaY = -1;
@@ -682,10 +700,8 @@ namespace Compass
                 _previousManipulationDeltaX = x;
                 _previousManipulationDeltaY = y;
 
-                Thickness margin = CompassControl.Margin;
-                margin.Top -= diffY;
-                margin.Left -= diffX;
-                CompassControl.Margin = margin;
+                _compassControlPosition.X -= diffX;
+                _compassControlPosition.Y -= diffY;
 
                 e.Handled = true;
             }
@@ -837,6 +853,7 @@ namespace Compass
         {
             LocationUsageQueryDialog.LocationUsageAllowed -= OnLocationUsageAllowed;
             _appSettings.LocationAllowed = true;
+            _centerToLocationButton.IsEnabled = true;
 
             _locationTimer = new Timer(GetCurrentLocation, null,
                 TimeSpan.FromSeconds(0),
@@ -911,43 +928,31 @@ namespace Compass
         {
             Debug.WriteLine(DebugTag + "ToggleFullscreenButton_Click(): "
                 + _inFullscreenMode + " -> " + !_inFullscreenMode);
-
-            Thickness margin = new Thickness();
+            _toggleFullscreenButton.IsEnabled = false;
 
             if (_inFullscreenMode)
             {
-                // To normal mode
-                margin.Left = _previousCompassX;
-                margin.Top = _previousCompassY;
-
-                CompassControl.PlateHeight = Compass.CompassControl.DefaultPlateHeight;
-                CompassControl.PlateAngle = _compassAngle;
-                FullscreenBackground.Visibility = Visibility.Collapsed;
                 _toggleFullscreenButton.IconUri = new Uri(FullscreenModeOffIconUri, UriKind.Relative);
             }
             else
             {
                 // To fullscreen mode
                 _compassAngle = CompassControl.PlateAngle;
-                _previousCompassX = CompassControl.Margin.Left;
-                _previousCompassY = CompassControl.Margin.Top;
 
-                margin.Top = -60;
-                margin.Left = 20;
+                if (_compassControlPosition != null)
+                {
+                    _previousCompassX = _compassControlPosition.X;
+                    _previousCompassY = _compassControlPosition.Y;
+                }
 
-                CompassControl.PlateHeight = CompassControlPlateHeightFullscreen;
-                CompassControl.AngleOffset = 0;
-                CompassControl.PlateAngle = 0;
                 FullscreenBackground.Visibility = Visibility.Visible;
                 _toggleFullscreenButton.IconUri = new Uri(FullscreenModeOnIconUri, UriKind.Relative);
             }
 
-            CompassControl.Margin = margin;
-            CompassControl.Width = CompassControl.PlateWidth;
-            CompassControl.Height = CompassControl.PlateHeight;
             CompassControl.ManipulationEnabled = !CompassControl.ManipulationEnabled;
             _inFullscreenMode = !_inFullscreenMode;
             _toggleAutoNorthButton.IsEnabled = !_inFullscreenMode;
+            StartToggleFullscreenAnimation(_inFullscreenMode);
         }
 
         /// <summary>
@@ -1041,5 +1046,84 @@ namespace Compass
         }
 
         #endregion // Button tap handlers
+
+        #region Animations
+
+        private void StartToggleFullscreenAnimation(bool toFullscreen)
+        {
+            Debug.WriteLine(DebugTag + "StartToggleFullscreenAnimation(): " + _compassAngle);
+
+            if (_compassAngle > 180)
+            {
+                _compassAngle -= 360;
+            }
+            else if (_compassAngle < -180)
+            {
+                _compassAngle += 360;
+            }
+
+            if (toFullscreen)
+            {
+                CompassPlateAngleAnimation.From = _compassAngle;
+                CompassPlateAngleAnimation.To = 0;
+                CompassPlateHeightAnimation.From = Compass.CompassControl.DefaultPlateHeight;
+                CompassPlateHeightAnimation.To = CompassControlPlateHeightFullscreen;
+                CompassControlXAnimation.From = _previousCompassX;
+                CompassControlXAnimation.To = 0;
+                CompassControlYAnimation.From = _previousCompassY;
+                CompassControlYAnimation.To = CompassControlFullscreenY;
+                FullscreenBackgroundOpacityAnimation.To = FullscreenBackroundOpacity;
+            }
+            else
+            {
+                CompassPlateAngleAnimation.From = 0;
+                CompassPlateAngleAnimation.To = _compassAngle;
+                CompassPlateHeightAnimation.From = CompassControlPlateHeightFullscreen;
+                CompassPlateHeightAnimation.To = Compass.CompassControl.DefaultPlateHeight;
+                CompassControlXAnimation.From = 0;
+                CompassControlXAnimation.To = _previousCompassX;
+                CompassControlYAnimation.From = CompassControlFullscreenY;
+                CompassControlYAnimation.To = _previousCompassY;
+                FullscreenBackgroundOpacityAnimation.To = 0;
+            }
+
+            try
+            {
+                ToggleFullscreenStoryBoard.Begin();
+            }
+            catch (InvalidOperationException e)
+            {
+                Debug.WriteLine(DebugTag + "StartToggleFullscreenAnimation(): " + e.ToString());
+            }
+        }
+
+        private void OnToggleFullscreenStoryBoardCompleted(object sender, EventArgs e)
+        {
+            if (_inFullscreenMode)
+            {
+                if (_compassControlPosition != null)
+                {
+                    _compassControlPosition.X = 0;
+                    _compassControlPosition.Y = CompassControlFullscreenY;
+                }
+
+                CompassControl.PlateAngle = 0;
+            }
+            else
+            {
+                if (_compassControlPosition != null)
+                {
+                    _compassControlPosition.X = _previousCompassX;
+                    _compassControlPosition.Y = _previousCompassY;
+                }
+
+                CompassControl.PlateAngle = _compassAngle;
+                FullscreenBackground.Visibility = Visibility.Collapsed;
+            }
+
+            _toggleFullscreenButton.IsEnabled = true;
+        }
+
+        #endregion // Animations
     }
 }

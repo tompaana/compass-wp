@@ -22,7 +22,7 @@
                 x:Name="PlateRotation"
                 CenterX="0.5"
                 CenterY="0.5"
-                Angle="0" />
+                Angle="0" />   
         </UIElement.RenderTransform>
         <Image
             x:Name="PlateBackground"
@@ -40,42 +40,48 @@
             Stretch="Uniform"
             Source="/Assets/Graphics/compass_plate.png"
             />
-        <Image
-            x:Name="ScaleShadow"
-            Margin="0, 190, 0, 0"
-            Width="276"
-            Stretch="Uniform"
-            Source="/Assets/Graphics/scale_shadow.png"
-            />
-        <Image
-            x:Name="Scale"
-            Margin="0, 190, 0, 0"
-            Width="276"
-            Stretch="Uniform"
-            RenderTransformOrigin="0.5, 0.5"
-            Source="/Assets/Graphics/scale.png">
+        <Grid x:Name="ScaleGrid">
             <UIElement.RenderTransform>
-                <RotateTransform
-                x:Name="ScaleRotation"
-                CenterX="0.5"
-                CenterY="0.5"
-                Angle="0" />
+                <TranslateTransform
+                    x:Name="ScalePosition"
+                    X="0"
+                    Y="100"
+                    />
             </UIElement.RenderTransform>
-        </Image>
-        <Image
-            x:Name="Needle"
-            Margin="0, 190, 0, 0"
-            Width="21"
-            Stretch="Uniform"
-            RenderTransformOrigin="0.5, 0.5"
-            Source="/Assets/Graphics/compass_needle.png">
-            <UIElement.RenderTransform>
-                <RotateTransform
-                x:Name="NeedleRotation"
-                CenterX="0.5"
-                CenterY="0.5"
-                Angle="0" />
-            </UIElement.RenderTransform>
-        </Image>
+            <Image
+                x:Name="ScaleShadow"
+                Width="276"
+                Stretch="Uniform"
+                Source="/Assets/Graphics/scale_shadow.png"
+                />
+            <Image
+                x:Name="Scale"
+                Width="276"
+                Stretch="Uniform"
+                RenderTransformOrigin="0.5, 0.5"
+                Source="/Assets/Graphics/scale.png">
+                <UIElement.RenderTransform>
+                    <RotateTransform
+                    x:Name="ScaleRotation"
+                    CenterX="0.5"
+                    CenterY="0.5"
+                    Angle="0" />
+                </UIElement.RenderTransform>
+            </Image>
+            <Image
+                x:Name="Needle"
+                Width="21"
+                Stretch="Uniform"
+                RenderTransformOrigin="0.5, 0.5"
+                Source="/Assets/Graphics/compass_needle.png">
+                <UIElement.RenderTransform>
+                    <RotateTransform
+                    x:Name="NeedleRotation"
+                    CenterX="0.5"
+                    CenterY="0.5"
+                    Angle="0" />
+                </UIElement.RenderTransform>
+            </Image>
+        </Grid>
     </Grid>
 </UserControl>

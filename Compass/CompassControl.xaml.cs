@@ -13,6 +13,7 @@ using Microsoft.Phone.Controls;
 using Microsoft.Phone.Shell;
 using System.Diagnostics;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace Compass
 {
@@ -22,11 +23,12 @@ namespace Compass
     public partial class CompassControl : UserControl
     {
         // Constants
+        public static readonly double DefaultPlateWidth = 169;
         public static readonly double DefaultPlateHeight = 350;
         private const String DebugTag = "CompassControl.";
         private const double RadiansToDegreesCoefficient = 57.2957795; // 180 / PI
-        private const double ScaleRelativeTopMargin = 0.32f;
-        private const double PlateManipulationRelativeTopMargin = 0.15f;
+        private const double ScaleRelativeTopMargin = 0.16;
+        private const double PlateManipulationRelativeTopMargin = 0.15;
         private const int PlateNativeWidth = 870;
         private const int PlateNativeHeight = 1800;
         private const int ScaleNativeWidth = 828;
@@ -45,14 +47,14 @@ namespace Compass
         };
 
         // Members
+        private TranslateTransform _scalePosition = null;
         private double _plateCenterX = 0;
         private double _plateCenterY = 0;
         private double _previousX = 0;
         private double _previousY = 0;
         private double _adjustedAngle = 0;
-        private int _plateManipulationBottom = 0;
-        private int _scaleManipulationTop = 0;
-        private int _scaleManipulationBottom = 0;
+        private double _plateTopEndY = 0;
+        private double _plateBottomStartY = 0;
 
         // Properties
 
@@ -79,43 +81,60 @@ namespace Compass
             private set;
         }
 
+        public static readonly DependencyProperty PlateWidthProperty =
+            DependencyProperty.Register("PlateWidth", typeof(double), typeof(CompassControl), null);
+
         /// <summary>
         /// The width of the compass control (plate).
+        /// Note that this property cannot be used to change the width. Use
+        /// PlateHeight instead to manipulate the size of the plate.
         /// </summary>
         public double PlateWidth
         {
             get
             {
-                return Plate.Width;
+                return (double)GetValue(PlateWidthProperty);
             }
             set
             {
-                if (value > 0 && value != Plate.ActualWidth)
-                {
-                    double relativeSize = value / PlateNativeWidth;
-                    SetRelativeSize(relativeSize);
-                }
+                SetValue(PlateWidthProperty, value);
             }
         }
 
-        /// <summary>
-        /// The height of the compass control (plate).
-        /// </summary>
+        public static readonly DependencyProperty PlateHeightProperty =
+            DependencyProperty.Register("PlateHeight", typeof(double), typeof(CompassControl),
+                new PropertyMetadata(0d, new PropertyChangedCallback(OnPlateHeightChanged)));
+
         public double PlateHeight
         {
             get
             {
-                return Plate.Height;
+                return (double)GetValue(PlateHeightProperty);
             }
             set
             {
-                if (value > 0 && value != Plate.ActualHeight)
-                {
-                    double relativeSize = value / PlateNativeHeight;
-                    SetRelativeSize(relativeSize);
-                }
+                SetValue(PlateHeightProperty, value);
             }
         }
+
+        private static void OnPlateHeightChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
+        {
+            ((CompassControl)sender).OnPlateHeightChanged((double)e.NewValue);
+        }
+
+        private void OnPlateHeightChanged(double value)
+        {
+            if (value > 0 && value != Plate.ActualHeight)
+            {
+                double relativeSize = value / PlateNativeHeight;
+                SetRelativeSize(relativeSize);
+                PlateWidth = relativeSize * PlateNativeWidth;
+            }
+        }
+
+        public static readonly DependencyProperty PlateAngleProperty =
+            DependencyProperty.Register("PlateAngle", typeof(double), typeof(CompassControl),
+                new PropertyMetadata(0d, new PropertyChangedCallback(OnPlateAngleChanged)));
 
         /// <summary>
         /// Compass control (plate) angle.
@@ -124,10 +143,24 @@ namespace Compass
         {
             get
             {
-                return PlateRotation.Angle;
+                return (double)GetValue(PlateAngleProperty);
             }
             set
             {
+                SetValue(PlateAngleProperty, value);
+            }
+        }
+
+        private static void OnPlateAngleChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
+        {
+            ((CompassControl)sender).OnPlateAngleChanged((double)e.NewValue);
+        }
+
+        private void OnPlateAngleChanged(double value)
+        {
+            if (value != PlateRotation.Angle)
+            {
+                Debug.WriteLine(DebugTag + "OnPlateAngleChanged(): " + value);
                 PlateRotation.Angle = value;
                 UpdateNeedleAngle();
             }
@@ -164,8 +197,9 @@ namespace Compass
             }
             set
             {
+                Debug.WriteLine(DebugTag + "AngleOffset.set: " + value);
                 _angleOffset = value;
-                PlateRotation.Angle = _angleOffset + _adjustedAngle;
+                PlateAngle = _angleOffset + _adjustedAngle;
                 UpdateNeedleAngle();
             }
         }
@@ -185,9 +219,11 @@ namespace Compass
         public CompassControl()
         {
             InitializeComponent();
+            PlateWidth = DefaultPlateWidth;
             PlateHeight = DefaultPlateHeight;
             ManipulatedArea = CompassControlArea.None;
             ManipulationEnabled = true;
+            LayoutRoot.CacheMode = new BitmapCache();
         }
 
         /// <summary>
@@ -212,21 +248,22 @@ namespace Compass
             {
                 if (container == Plate)
                 {
-                    if (y < _plateManipulationBottom)
+                    Debug.WriteLine("Container == Plate");
+                    if (y < _plateTopEndY)
                     {
                         return CompassControlArea.PlateTop;
                     }
-                    else if (y >= _plateManipulationBottom && y < _scaleManipulationTop)
-                    {
-                        return CompassControlArea.PlateCenter;
-                    }
-                    else if (y > _scaleManipulationBottom)
+
+                    if (y > _plateBottomStartY)
                     {
                         return CompassControlArea.PlateBottom;
                     }
+
+                    return CompassControlArea.PlateCenter;
                 }
                 else if (container == Scale)
                 {
+                    Debug.WriteLine("Container == Scale");
                     return CompassControlArea.Scale;
                 }
             }
@@ -275,11 +312,10 @@ namespace Compass
                 double previousDeltaX = _previousX - _plateCenterX;
                 double previousDeltaY = _previousY - _plateCenterY;
 
-                int angleDelta = 
-                    -(int)Math.Round(
-                        (Math.Atan2(previousDeltaY, previousDeltaX)
-                        - Math.Atan2(deltaY, deltaX))
-                        * RadiansToDegreesCoefficient);
+                double angleDelta = -Math.Round(
+                    (Math.Atan2(previousDeltaY, previousDeltaX)
+                    - Math.Atan2(deltaY, deltaX))
+                    * RadiansToDegreesCoefficient);
 
                 if (angleDelta > 180)
                 {
@@ -290,8 +326,8 @@ namespace Compass
                     angleDelta += 360;
                 }
 
-                _adjustedAngle = (PlateRotation.Angle + angleDelta) % 360;
-                PlateRotation.Angle = AngleOffset + _adjustedAngle;
+                _adjustedAngle = (PlateAngle + angleDelta) % 360;
+                PlateAngle = AngleOffset + _adjustedAngle;
                 UpdateNeedleAngle();
 
                 if (AutoNorth)
@@ -311,11 +347,10 @@ namespace Compass
                 double previousDeltaX = _previousX - centerX;
                 double previousDeltaY = _previousY - centerY;
 
-                int angleDelta =
-                    -(int)Math.Round(
-                        (Math.Atan2(previousDeltaY, previousDeltaX)
-                        - Math.Atan2(deltaY, deltaX))
-                        * RadiansToDegreesCoefficient);
+                double angleDelta = -Math.Round(
+                    (Math.Atan2(previousDeltaY, previousDeltaX)
+                    - Math.Atan2(deltaY, deltaX))
+                    * RadiansToDegreesCoefficient);
 
                 if (angleDelta > 180)
                 {
@@ -354,31 +389,35 @@ namespace Compass
             Plate.Width = plateWidth;
             Plate.Height = plateHeight;
 
-            Debug.WriteLine(DebugTag + "SetRelativeSize(): " + relativeSize
-                + " -> Plate size: " + Plate.Width + "x" + Plate.Height);
+            double scaleWidth = relativeSize * ScaleNativeWidth;
+            ScaleShadow.Width = scaleWidth;
+            Scale.Width = scaleWidth;
 
-            ScaleShadow.Width = relativeSize * ScaleNativeWidth;
-            Scale.Width = relativeSize * ScaleNativeWidth;
             Needle.Width = relativeSize * NeedleNativeWidth;
 
-            _plateCenterX = relativeSize * PlateNativeWidth / 2;
-            _plateCenterY = relativeSize * PlateNativeHeight / 2;
+            _plateCenterX = plateWidth / 2;
+            _plateCenterY = plateHeight / 2;
 
-            Thickness topMargin = new Thickness();
-            topMargin.Top = plateHeight * ScaleRelativeTopMargin;
-            ScaleShadow.Margin = topMargin;
-            Scale.Margin = topMargin;
-            Needle.Margin = topMargin;
+            if (_scalePosition != ScaleGrid.RenderTransform as TranslateTransform)
+            {
+                _scalePosition = ScaleGrid.RenderTransform as TranslateTransform;
+            }
 
-            _plateManipulationBottom =
-                (int)(plateHeight * PlateManipulationRelativeTopMargin);
-            _scaleManipulationTop = (int)(topMargin.Top + 60 * relativeSize);
-            _scaleManipulationBottom = (int)(_scaleManipulationTop + ScaleNativeHeight * relativeSize);
+            double scaleTopMargin = plateHeight * ScaleRelativeTopMargin;
 
-            Debug.WriteLine(DebugTag + "SetRelativeSize(): Manipulation margins: "
-                + _plateManipulationBottom + ", "
-                + _scaleManipulationTop + ", "
-                + _scaleManipulationBottom);
+            if (_scalePosition != null)
+            {
+                _scalePosition.Y = scaleTopMargin;
+            }
+
+            _plateTopEndY = plateHeight * PlateManipulationRelativeTopMargin;
+            _plateBottomStartY = plateHeight - _plateTopEndY;
+
+            Debug.WriteLine(DebugTag + "SetRelativeSize(): Relative size was set to "
+                + relativeSize + ". Plate size is therefore "
+                + plateWidth + "x" + plateHeight + " and manipulation margins are "
+                + _plateTopEndY + " and "
+                + _plateBottomStartY + ".");
         }
 
         /// <summary>
