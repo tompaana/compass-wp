@@ -429,6 +429,7 @@ namespace Compass
         {
             Debug.WriteLine(DebugTag + "MainPage_Loaded()");
             _compassControlPosition = CompassControl.RenderTransform as TranslateTransform;
+            CompassControl.OnMove += CompassControl_OnMove;
 
             if (_wasLaunched && !_appSettings.LocationAllowed)
             {
@@ -624,6 +625,22 @@ namespace Compass
         #endregion // Compass sensor event handling
 
         #region Touch event handling
+
+        /// <summary>
+        /// Moves the compass control based on the given delta.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e">A two-dimensional array of delta pixels. The first
+        /// index is expected to be delta X, the second delta Y.</param>
+        private void CompassControl_OnMove(object sender, double[] e)
+        {
+            if (e != null && e.Length == 2)
+            {
+                Debug.WriteLine(DebugTag + "CompassControl_OnMove(): [" + e[0] + ", " + e[1] + "]");
+                _compassControlPosition.X += e[0];
+                _compassControlPosition.Y += e[1];
+            }
+        }
 
         protected override void OnManipulationStarted(ManipulationStartedEventArgs e)
         {

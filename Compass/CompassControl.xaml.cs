@@ -48,15 +48,17 @@ namespace Compass
 
         // Members
         private TranslateTransform _scalePosition = null;
+        private TouchPoint _previousTouchPoint1 = null;
+        private TouchPoint _previousTouchPoint2 = null;
         private double _plateCenterX = 0;
         private double _plateCenterY = 0;
         private double _previousX = 0;
         private double _previousY = 0;
-        private double _adjustedAngle = 0;
         private double _plateTopEndY = 0;
         private double _plateBottomStartY = 0;
+        private int _currentTouchPointCount = 0;
 
-        // Properties
+        #region Properties
 
         private double _compassReading = 0;
         public double CompassReading
@@ -166,6 +168,28 @@ namespace Compass
             }
         }
 
+        public double AdjustedAngle
+        {
+            get;
+            set;
+        }
+
+        private double _angleOffset = 0;
+        public double AngleOffset
+        {
+            get
+            {
+                return _angleOffset;
+            }
+            set
+            {
+                Debug.WriteLine(DebugTag + "AngleOffset.set: " + value);
+                _angleOffset = value;
+                PlateAngle = _angleOffset + AdjustedAngle;
+                UpdateNeedleAngle();
+            }
+        }
+
         /// <summary>
         /// If true, the orienteering box (scale) will always be automatically
         /// set to north.
@@ -188,22 +212,6 @@ namespace Compass
             }
         }
 
-        private double _angleOffset = 0;
-        public double AngleOffset
-        {
-            get
-            {
-                return _angleOffset;
-            }
-            set
-            {
-                Debug.WriteLine(DebugTag + "AngleOffset.set: " + value);
-                _angleOffset = value;
-                PlateAngle = _angleOffset + _adjustedAngle;
-                UpdateNeedleAngle();
-            }
-        }
-
         /// <summary>
         /// Enabling/disabling touch manipulation.
         /// </summary>
@@ -212,6 +220,15 @@ namespace Compass
             get;
             set;
         }
+
+        #endregion // Properties
+
+        /// <summary>
+        /// This event occurs when the compass is requested to be moved. The
+        /// event argument should be a two-dimensional array with the delta X
+        /// in the first index and delta Y in the second.
+        /// </summary>
+        public event EventHandler<double[]> OnMove;
 
         /// <summary>
         /// Constructor.
@@ -224,24 +241,25 @@ namespace Compass
             ManipulatedArea = CompassControlArea.None;
             ManipulationEnabled = true;
             LayoutRoot.CacheMode = new BitmapCache();
+            Touch.FrameReported += new TouchFrameEventHandler(Touch_FrameReported);
         }
 
         /// <summary>
         /// Rotates the box (scale) to point to north.
         /// </summary>
-        /// <param name="offset"></param>
+        /// <param name="offset">The angle offset.</param>
         public void RotateBoxToNorth(double offset)
         {
             ScaleRotation.Angle = offset - PlateRotation.Angle;
         }
 
         /// <summary>
-        /// 
+        /// Resolves the specific plate area at the given coordinates.
         /// </summary>
-        /// <param name="x"></param>
-        /// <param name="y"></param>
-        /// <param name="container"></param>
-        /// <returns></returns>
+        /// <param name="x">The X coordinate.</param>
+        /// <param name="y">The Y coordinate.</param>
+        /// <param name="container">The UI element in the given coordinates.</param>
+        /// <returns>The area as CompassControlArea enumeration.</returns>
         private CompassControlArea AreaAt(double x, double y, UIElement container)
         {
             if (container != null)
@@ -274,10 +292,107 @@ namespace Compass
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        void Touch_FrameReported(object sender, TouchFrameEventArgs e)
+        {
+            _currentTouchPointCount = e.GetTouchPoints(Plate).Count;
+            TouchPointCollection pointCollection = e.GetTouchPoints(Plate);
+
+            if (_currentTouchPointCount == 2)
+            {
+                TouchPoint point1 = pointCollection[0];
+                TouchPoint point2 = pointCollection[1];
+
+                if (point1.Action == TouchAction.Down || point2.Action == TouchAction.Down)
+                {
+                    bool isWithinBoundaries = true;
+
+                    foreach (TouchPoint point in pointCollection)
+                    {
+                        if (point.Position.X < 0 || point.Position.X > PlateWidth
+                            || point.Position.Y < 0 || point.Position.Y > PlateHeight)
+                        {
+                            isWithinBoundaries = false;
+                            break;
+                        }
+                    }
+
+                    if (isWithinBoundaries)
+                    {
+                        _previousTouchPoint1 = point1;
+                        _previousTouchPoint2 = point2;
+
+                        Debug.WriteLine(DebugTag + "Touch_FrameReported(): Two point ("
+                            + point1.Position + " and " + point2.Position + ") manipulation ->");
+                    }
+                    else
+                    {
+                        Debug.WriteLine(DebugTag + "Touch_FrameReported(): Both points are not within boundaries.");
+                        _previousTouchPoint1 = null;
+                        _previousTouchPoint2 = null;
+                    }
+                }
+                else if ((point1.Action == TouchAction.Move || point2.Action == TouchAction.Move)
+                         && _previousTouchPoint1 != null && _previousTouchPoint2 != null)
+                {
+                    double deltaX1 = point1.Position.X - _previousTouchPoint1.Position.X;
+                    double deltaY1 = point1.Position.Y - _previousTouchPoint1.Position.Y;
+                    double deltaX2 = point2.Position.X - _previousTouchPoint2.Position.X;
+                    double deltaY2 = point2.Position.Y - _previousTouchPoint2.Position.Y;
+
+                    /* If the touch points are moving in the same direction,
+                     * calculate the average common delta.
+                     */
+                    double commonDeltaX = 0;
+                    double commonDeltaY = 0;
+
+                    if (deltaX1 != 0 && deltaX2 != 0 && Math.Sign(deltaX1) == Math.Sign(deltaX2))
+                    {
+                        commonDeltaX = (deltaX1 + deltaX2) / 2;
+                    }
+
+                    if (deltaY1 != 0 && deltaY2 != 0 && Math.Sign(deltaY1) == Math.Sign(deltaY2))
+                    {
+                        commonDeltaY = (deltaY1 + deltaY2) / 2;
+                    }
+
+                    if (OnMove != null && (commonDeltaX != 0 || commonDeltaY != 0))
+                    {
+                        if (PlateAngle != 0)
+                        {
+                            ProjectDeltaBasedOnAngle(ref commonDeltaX, ref commonDeltaY, PlateAngle);
+                        }
+
+                        Debug.WriteLine(DebugTag + "Touch_FrameReported(): Common delta: ["
+                            + commonDeltaX + ", " + commonDeltaY + "]");
+                        OnMove(this, new double[] { commonDeltaX, commonDeltaY });
+                    }
+
+                    _previousTouchPoint1 = point1;
+                    _previousTouchPoint2 = point2;
+                }
+                else if (point1.Action == TouchAction.Up || point2.Action == TouchAction.Up)
+                {
+                    Debug.WriteLine(DebugTag + "Touch_FrameReported(): <- two point manipulation");
+                    _previousTouchPoint1 = null;
+                    _previousTouchPoint2 = null;
+                }
+            }
+            else
+            {
+                _previousTouchPoint1 = null;
+                _previousTouchPoint2 = null;
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
         /// <param name="e"></param>
         protected override void OnManipulationStarted(ManipulationStartedEventArgs e)
         {
-            if (ManipulationEnabled)
+            if (ManipulationEnabled && _currentTouchPointCount == 1)
             {
                 _previousX = e.ManipulationOrigin.X;
                 _previousY = e.ManipulationOrigin.Y;
@@ -300,7 +415,7 @@ namespace Compass
         /// <param name="e"></param>
         protected override void OnManipulationDelta(ManipulationDeltaEventArgs e)
         {
-            if (!ManipulationEnabled)
+            if (!ManipulationEnabled || _currentTouchPointCount > 1)
             {
                 return;
             }
@@ -326,8 +441,8 @@ namespace Compass
                     angleDelta += 360;
                 }
 
-                _adjustedAngle = (PlateAngle + angleDelta) % 360;
-                PlateAngle = AngleOffset + _adjustedAngle;
+                AdjustedAngle = (PlateAngle + angleDelta) % 360;
+                PlateAngle = AngleOffset + AdjustedAngle;
                 UpdateNeedleAngle();
 
                 if (AutoNorth)
@@ -418,6 +533,19 @@ namespace Compass
                 + plateWidth + "x" + plateHeight + " and manipulation margins are "
                 + _plateTopEndY + " and "
                 + _plateBottomStartY + ".");
+        }
+
+        /// <summary>
+        /// Projects the given delta based on the given angle.
+        /// </summary>
+        /// <param name="deltaX">The reference to delta X.</param>
+        /// <param name="deltaY">The reference to delta Y.</param>
+        /// <param name="angle">The angle in degrees.</param>
+        private void ProjectDeltaBasedOnAngle(ref double deltaX, ref double deltaY, double angle)
+        {
+            double angleInRads = angle / RadiansToDegreesCoefficient;
+            deltaX *= Math.Sin(angleInRads);
+            deltaY *= Math.Cos(angleInRads);
         }
 
         /// <summary>
