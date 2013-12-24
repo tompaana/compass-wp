@@ -245,13 +245,13 @@ namespace Compass
         /// </summary>
         public CompassControl()
         {
+            Debug.WriteLine(DebugTag + "CompassControl()");
             InitializeComponent();
             PlateWidth = DefaultPlateWidth;
             PlateHeight = DefaultPlateHeight;
             ManipulatedArea = CompassControlArea.None;
             ManipulationEnabled = true;
             LayoutRoot.CacheMode = new BitmapCache();
-            Touch.FrameReported += new TouchFrameEventHandler(Touch_FrameReported);
         }
 
         /// <summary>
@@ -304,14 +304,23 @@ namespace Compass
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        void Touch_FrameReported(object sender, TouchFrameEventArgs e)
+        public void Touch_FrameReported(object sender, TouchFrameEventArgs e)
         {
+            try
+            {
+                CurrentTouchPointCount = e.GetTouchPoints(Container).Count;
+            }
+            catch (ArgumentException ex)
+            {
+                Debug.WriteLine(DebugTag + "Touch_FrameReported(): " + ex.ToString());
+                return;
+            }
+
             if (Container == null || !ManipulationEnabled)
             {
                 return;
             }
 
-            CurrentTouchPointCount = e.GetTouchPoints(Container).Count;
             TouchPointCollection pointCollection = e.GetTouchPoints(Container);
 
             if (CurrentTouchPointCount == 2)
@@ -417,6 +426,7 @@ namespace Compass
                     Debug.WriteLine(DebugTag + "Touch_FrameReported(): <- two point manipulation");
                     _previousTouchPoint1 = null;
                     _previousTouchPoint2 = null;
+                    CurrentTouchPointCount--;
                 }
             }
             else

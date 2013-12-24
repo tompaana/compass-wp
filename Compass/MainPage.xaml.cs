@@ -429,7 +429,6 @@ namespace Compass
         {
             Debug.WriteLine(DebugTag + "MainPage_Loaded()");
             _compassControlPosition = CompassControl.RenderTransform as TranslateTransform;
-            CompassControl.OnMove += CompassControl_OnMove;
             CompassControl.Container = this.LayoutRoot;
 
             if (_wasLaunched && !_appSettings.LocationAllowed)
@@ -502,6 +501,9 @@ namespace Compass
                 CompassControl.PlateAngle = 0;
             }
 
+            Touch.FrameReported += CompassControl.Touch_FrameReported;
+            CompassControl.OnMove += CompassControl_OnMove;
+
             base.OnNavigatedTo(e);
         }
 
@@ -511,6 +513,9 @@ namespace Compass
         /// <param name="e"></param>
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
+            Touch.FrameReported -= CompassControl.Touch_FrameReported;
+            CompassControl.OnMove -= CompassControl_OnMove;
+
             if (_locationTimer != null)
             {
                 _locationTimer.Dispose();

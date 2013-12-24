@@ -70,6 +70,7 @@
                         NavigateUri="https://github.com/nokia-developer/compass-wp"
                         TargetName="_blank"
                         />
+                    <!--
                     <TextBlock
                         Margin="0,24,0,0"
                         Text="Known issues:"
@@ -77,10 +78,11 @@
                     <TextBlock
                         Margin="12,0,0,0"
                         TextWrapping="Wrap">
-                        <Run Text="- The compass plate gets clipped near the edges of the screen." />
+                        <Run Text="- None" />
                     </TextBlock>
+                    -->
                     <TextBlock
-                        Margin="0,24,0,0"
+                        Margin="0,48,0,0"
                         Style="{StaticResource PhoneTextSubtleStyle}"
                         TextWrapping="Wrap">
                         <Run Text="Developed by Tomi Paananen." />
