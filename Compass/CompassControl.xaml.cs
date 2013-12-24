@@ -585,7 +585,7 @@ namespace Compass
                 delta += 360;
             }
 
-            AdjustedAngle = (PlateAngle + delta) % 360;
+            AdjustedAngle = (PlateAngle - AngleOffset + delta) % 360;
             PlateAngle = AngleOffset + AdjustedAngle;
             UpdateNeedleAngle();
 
