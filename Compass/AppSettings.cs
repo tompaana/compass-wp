@@ -93,7 +93,7 @@ namespace Compass
         private AppSettings()
         {
             LastKnownLocation = null;
-            MapMode = MapCartographicMode.Road;
+            MapMode = MapCartographicMode.Terrain;
         }
 
         /// <summary>

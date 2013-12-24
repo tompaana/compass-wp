@@ -430,6 +430,7 @@ namespace Compass
             Debug.WriteLine(DebugTag + "MainPage_Loaded()");
             _compassControlPosition = CompassControl.RenderTransform as TranslateTransform;
             CompassControl.OnMove += CompassControl_OnMove;
+            CompassControl.Container = this.LayoutRoot;
 
             if (_wasLaunched && !_appSettings.LocationAllowed)
             {
@@ -634,11 +635,43 @@ namespace Compass
         /// index is expected to be delta X, the second delta Y.</param>
         private void CompassControl_OnMove(object sender, double[] e)
         {
-            if (e != null && e.Length == 2)
+            if (e == null || e.Length != 2)
             {
-                Debug.WriteLine(DebugTag + "CompassControl_OnMove(): [" + e[0] + ", " + e[1] + "]");
-                _compassControlPosition.X += e[0];
-                _compassControlPosition.Y += e[1];
+                return;
+            }
+
+            if (_compassControlPosition != CompassControl.RenderTransform as TranslateTransform)
+            {
+                _compassControlPosition = CompassControl.RenderTransform as TranslateTransform;
+            }
+
+            //Debug.WriteLine(DebugTag + "CompassControl_OnMove(): [" + e[0] + ", " + e[1] + "]");
+            _compassControlPosition.X += e[0];
+            _compassControlPosition.Y += e[1];
+
+            double plateWidthHalved = CompassControl.PlateWidth / 2;
+            double plateHeightHalved = CompassControl.PlateHeight / 2;
+            double layoutWidth = LayoutRoot.ActualWidth;
+            double layoutHeight = LayoutRoot.ActualHeight;
+            double normaliseX = -layoutWidth / 2 + plateWidthHalved;
+            double normaliseY = -layoutHeight / 2 + plateHeightHalved;
+
+            if (_compassControlPosition.X < -plateWidthHalved + normaliseX)
+            {
+                _compassControlPosition.X = -plateWidthHalved + normaliseX;
+            }
+            else if (_compassControlPosition.X > layoutWidth - plateWidthHalved + normaliseX)
+            {
+                _compassControlPosition.X = layoutWidth - plateWidthHalved + normaliseX;
+            }
+
+            if (_compassControlPosition.Y < -CompassControl.PlateWidth + normaliseY)
+            {
+                _compassControlPosition.Y = -CompassControl.PlateWidth + normaliseY;
+            }
+            else if (_compassControlPosition.Y > layoutHeight - plateWidthHalved - 150 + normaliseY)
+            {
+                _compassControlPosition.Y = layoutHeight - plateWidthHalved - 150 + normaliseY;
             }
         }
 
@@ -652,8 +685,9 @@ namespace Compass
             Debug.WriteLine(DebugTag + "OnManipulationStarted(): Area at ["
                 + x + ", " + y + "] == " + area);
 
-            if (area == Compass.CompassControl.CompassControlArea.PlateCenter
+            if ((area == Compass.CompassControl.CompassControlArea.PlateCenter
                 || area == Compass.CompassControl.CompassControlArea.PlateBottom)
+                && CompassControl.CurrentTouchPointCount != 2)
             {
                 // The touched area is on the compass
 
@@ -697,7 +731,7 @@ namespace Compass
 
         protected override void OnManipulationDelta(ManipulationDeltaEventArgs e)
         {
-            if (_compassBeingMoved)
+            if (_compassBeingMoved && CompassControl.CurrentTouchPointCount != 2)
             {
                 double x = e.ManipulationOrigin.X;
                 double y = e.ManipulationOrigin.Y;
@@ -717,8 +751,7 @@ namespace Compass
                 _previousManipulationDeltaX = x;
                 _previousManipulationDeltaY = y;
 
-                _compassControlPosition.X -= diffX;
-                _compassControlPosition.Y -= diffY;
+                CompassControl_OnMove(null, new double[] { -diffX, -diffY });
 
                 e.Handled = true;
             }
@@ -905,7 +938,11 @@ namespace Compass
 
                     CalibrationView.Visibility = Visibility.Visible;
 
-                    _calibrationTimer.Dispose();
+                    if (_calibrationTimer != null)
+                    {
+                        _calibrationTimer.Dispose();
+                    }
+
                     _calibrationTimer = new Timer(OnCalibrationTimerTimeout, null,
                         TimeSpan.FromSeconds(0), TimeSpan.FromSeconds(CalibrationTimerInterval));
 

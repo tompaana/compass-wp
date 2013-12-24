@@ -56,7 +56,6 @@ namespace Compass
         private double _previousY = 0;
         private double _plateTopEndY = 0;
         private double _plateBottomStartY = 0;
-        private int _currentTouchPointCount = 0;
 
         #region Properties
 
@@ -162,7 +161,6 @@ namespace Compass
         {
             if (value != PlateRotation.Angle)
             {
-                Debug.WriteLine(DebugTag + "OnPlateAngleChanged(): " + value);
                 PlateRotation.Angle = value;
                 UpdateNeedleAngle();
             }
@@ -210,6 +208,18 @@ namespace Compass
                     RotateBoxToNorth(AngleOffset);
                 }
             }
+        }
+
+        public UIElement Container
+        {
+            get;
+            set;
+        }
+
+        public int CurrentTouchPointCount
+        {
+            get;
+            private set;
         }
 
         /// <summary>
@@ -296,10 +306,15 @@ namespace Compass
         /// <param name="e"></param>
         void Touch_FrameReported(object sender, TouchFrameEventArgs e)
         {
-            _currentTouchPointCount = e.GetTouchPoints(Plate).Count;
-            TouchPointCollection pointCollection = e.GetTouchPoints(Plate);
+            if (Container == null || !ManipulationEnabled)
+            {
+                return;
+            }
 
-            if (_currentTouchPointCount == 2)
+            CurrentTouchPointCount = e.GetTouchPoints(Container).Count;
+            TouchPointCollection pointCollection = e.GetTouchPoints(Container);
+
+            if (CurrentTouchPointCount == 2)
             {
                 TouchPoint point1 = pointCollection[0];
                 TouchPoint point2 = pointCollection[1];
@@ -308,7 +323,7 @@ namespace Compass
                 {
                     bool isWithinBoundaries = true;
 
-                    foreach (TouchPoint point in pointCollection)
+                    foreach (TouchPoint point in e.GetTouchPoints(Plate))
                     {
                         if (point.Position.X < 0 || point.Position.X > PlateWidth
                             || point.Position.Y < 0 || point.Position.Y > PlateHeight)
@@ -323,8 +338,10 @@ namespace Compass
                         _previousTouchPoint1 = point1;
                         _previousTouchPoint2 = point2;
 
-                        Debug.WriteLine(DebugTag + "Touch_FrameReported(): Two point ("
-                            + point1.Position + " and " + point2.Position + ") manipulation ->");
+                        Debug.WriteLine(DebugTag + "Touch_FrameReported(): Two point (["
+                            + Math.Round(point1.Position.X, 0) + ", " + Math.Round(point1.Position.X, 0) + "] and ["
+                            + Math.Round(point2.Position.X, 0) + ", " + Math.Round(point2.Position.X, 0)
+                            + "]) manipulation ->");
                     }
                     else
                     {
@@ -336,6 +353,10 @@ namespace Compass
                 else if ((point1.Action == TouchAction.Move || point2.Action == TouchAction.Move)
                          && _previousTouchPoint1 != null && _previousTouchPoint2 != null)
                 {
+                    /*Debug.WriteLine(DebugTag + "Touch_FrameReported(): ["
+                        + Math.Round(point1.Position.X, 0) + ", " + Math.Round(point1.Position.X, 0) + "],  ["
+                        + Math.Round(point2.Position.X, 0) + ", " + Math.Round(point2.Position.X, 0) + "]");*/
+
                     double deltaX1 = point1.Position.X - _previousTouchPoint1.Position.X;
                     double deltaY1 = point1.Position.Y - _previousTouchPoint1.Position.Y;
                     double deltaX2 = point2.Position.X - _previousTouchPoint2.Position.X;
@@ -359,15 +380,34 @@ namespace Compass
 
                     if (OnMove != null && (commonDeltaX != 0 || commonDeltaY != 0))
                     {
-                        if (PlateAngle != 0)
-                        {
-                            ProjectDeltaBasedOnAngle(ref commonDeltaX, ref commonDeltaY, PlateAngle);
-                        }
-
-                        Debug.WriteLine(DebugTag + "Touch_FrameReported(): Common delta: ["
-                            + commonDeltaX + ", " + commonDeltaY + "]");
+                        Debug.WriteLine(DebugTag + "Touch_FrameReported(): Common delta: "
+                            + commonDeltaX + ", " + commonDeltaY);
                         OnMove(this, new double[] { commonDeltaX, commonDeltaY });
                     }
+
+                    double previousCenterX = Math.Abs(_previousTouchPoint1.Position.X - _previousTouchPoint2.Position.X);
+                    double previousCenterY = Math.Abs(_previousTouchPoint1.Position.Y - _previousTouchPoint2.Position.Y);
+                    double centerX = Math.Abs(point1.Position.X - point2.Position.X);
+                    double centerY = Math.Abs(point1.Position.Y - point2.Position.Y);
+                    double previousDeltaX = (_previousTouchPoint1.Position.X - previousCenterX) - (_previousTouchPoint2.Position.X - previousCenterX);
+                    double previousDeltaY = (_previousTouchPoint1.Position.Y - previousCenterY) - (_previousTouchPoint2.Position.Y - previousCenterY);
+                    double deltaX = (point1.Position.X - centerX) - (point2.Position.X - centerX);
+                    double deltaY = (point1.Position.Y - centerY) - (point2.Position.Y - centerY);
+
+                    double angleDelta = -Math.Round(
+                        (Math.Atan2(previousDeltaY, previousDeltaX)
+                        - Math.Atan2(deltaY, deltaX))
+                        * RadiansToDegreesCoefficient);
+
+                    /*Debug.WriteLine(DebugTag + "Touch_FrameReported():"
+                        + "\n- prev delta X: " + previousDeltaX
+                        + "\n- prev delta Y: " + previousDeltaY
+                        + "\n- delta X: " + deltaX
+                        + "\n- delta Y: " + deltaY
+                        + "\n- angle delta: " + angleDelta
+                        );*/
+
+                    AdjustAngle(angleDelta);
 
                     _previousTouchPoint1 = point1;
                     _previousTouchPoint2 = point2;
@@ -392,7 +432,7 @@ namespace Compass
         /// <param name="e"></param>
         protected override void OnManipulationStarted(ManipulationStartedEventArgs e)
         {
-            if (ManipulationEnabled && _currentTouchPointCount == 1)
+            if (ManipulationEnabled && CurrentTouchPointCount == 1)
             {
                 _previousX = e.ManipulationOrigin.X;
                 _previousY = e.ManipulationOrigin.Y;
@@ -415,7 +455,7 @@ namespace Compass
         /// <param name="e"></param>
         protected override void OnManipulationDelta(ManipulationDeltaEventArgs e)
         {
-            if (!ManipulationEnabled || _currentTouchPointCount > 1)
+            if (!ManipulationEnabled || CurrentTouchPointCount > 1)
             {
                 return;
             }
@@ -432,23 +472,7 @@ namespace Compass
                     - Math.Atan2(deltaY, deltaX))
                     * RadiansToDegreesCoefficient);
 
-                if (angleDelta > 180)
-                {
-                    angleDelta -= 360;
-                }
-                else if (angleDelta < -180)
-                {
-                    angleDelta += 360;
-                }
-
-                AdjustedAngle = (PlateAngle + angleDelta) % 360;
-                PlateAngle = AngleOffset + AdjustedAngle;
-                UpdateNeedleAngle();
-
-                if (AutoNorth)
-                {
-                    RotateBoxToNorth(AngleOffset);
-                }
+                AdjustAngle(angleDelta);
             }
             else if (ManipulatedArea == CompassControlArea.Scale && !AutoNorth)
             {
@@ -533,6 +557,32 @@ namespace Compass
                 + plateWidth + "x" + plateHeight + " and manipulation margins are "
                 + _plateTopEndY + " and "
                 + _plateBottomStartY + ".");
+        }
+
+        /// <summary>
+        /// Adjusts the plate angle and updates the other properties
+        /// accordingly.
+        /// </summary>
+        /// <param name="delta">The angle delta.</param>
+        private void AdjustAngle(double delta)
+        {
+            if (delta > 180)
+            {
+                delta -= 360;
+            }
+            else if (delta < -180)
+            {
+                delta += 360;
+            }
+
+            AdjustedAngle = (PlateAngle + delta) % 360;
+            PlateAngle = AngleOffset + AdjustedAngle;
+            UpdateNeedleAngle();
+
+            if (AutoNorth)
+            {
+                RotateBoxToNorth(AngleOffset);
+            }
         }
 
         /// <summary>

@@ -42,7 +42,14 @@ namespace Compass
 
             if (!App.Properties.HasCompass)
             {
+#if (!DEBUG)
+                HeadingAccuracyTitleTextBlock.Visibility = Visibility.Collapsed;
+                HeadingAccuracyTextBlock.Visibility = Visibility.Collapsed;
+                CalibrateCompassButton.Visibility = Visibility.Collapsed;
+                RotateMapSwitch.Visibility = Visibility.Collapsed;
+#else
                 RotateMapSwitch.IsEnabled = false;
+#endif
             }
         }
 
