@@ -66,8 +66,8 @@
                         Margin="-12,0,0,0"
                         Foreground="{StaticResource PhoneAccentBrush}"
                         FontSize="{StaticResource PhoneFontSizeNormal}"
-                        Content="https://github.com/nokia-developer/compass-wp"
-                        NavigateUri="https://github.com/nokia-developer/compass-wp"
+                        Content="https://github.com/tompaana/compass-wp"
+                        NavigateUri="https://github.com/tompaana/compass-wp"
                         TargetName="_blank"
                         />
                     <!--
